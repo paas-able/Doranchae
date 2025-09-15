@@ -1,0 +1,53 @@
+version: "3.9"
+
+services:
+  auth:
+    build:
+      context: ./svc-auth
+    image: doranlocal/svc-auth:local
+    container_name: doran-auth
+    ports:
+      - "8080:8080"
+
+  community:
+    build:
+      context: ./svc-community
+    image: doranlocal/svc-community:local
+    container_name: doran-community
+    ports:
+      - "8081:8081"
+
+  penpal:
+    build:
+      context: ./svc-penpal
+    image: doranlocal/svc-penpal:local
+    container_name: doran-penpal
+    ports:
+      - "8082:8082"
+
+  welfare:
+    build:
+      context: ./svc-welfare
+    image: doranlocal/svc-welfare:local
+    container_name: doran-welfare
+    ports:
+      - "8083:8083"
+
+  app:
+    build:
+      context: ./app
+    image: doranlocal/app:local
+    container_name: doran-app
+    ports:
+      - "3000:3000"
+    depends_on:
+      - auth
+      - community
+      - penpal
+      - welfare
+    # (선택) 로컬 단독 실행/특수 환경에서 내부 주소를 바꾸고 싶다면 주석 해제
+    # environment:
+    #   - AUTH_INTERNAL_URL=http://auth:8080
+    #   - COMMUNITY_INTERNAL_URL=http://community:8081
+    #   - PENPAL_INTERNAL_URL=http://penpal:8082
+    #   - WELFARE_INTERNAL_URL=http://welfare:8083
