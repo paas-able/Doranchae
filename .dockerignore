@@ -1,0 +1,10 @@
+.git
+**/.git
+**/.idea
+**/.gradle
+**/build
+**/out
+node_modules
+**/node_modules
+**/.next
+*.log

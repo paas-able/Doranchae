@@ -1,0 +1,93 @@
+name: build-and-push
+
+on:
+  push:
+    branches: [develop, main]
+    paths:
+      - 'app/**'
+      - 'svc-auth/**'
+      - 'svc-community/**'
+      - 'svc-penpal/**'
+      - 'svc-welfare/**'
+      - '.github/workflows/build.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write   # GHCR 푸시에 필요 (Repo Settings > Actions > Workflow permissions: Read and write)
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    # 5개 서비스 공통 로직을 matrix로 처리
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - id: auth
+            context: ./svc-auth
+            image: svc-auth
+          - id: community
+            context: ./svc-community
+            image: svc-community
+          - id: penpal
+            context: ./svc-penpal
+            image: svc-penpal
+          - id: welfare
+            context: ./svc-welfare
+            image: svc-welfare
+          - id: app
+            context: ./app
+            image: app
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # owner/repo 를 소문자로 (GHCR 경로는 소문자 권장)
+      - name: Compute image namespace
+        run: echo "IMAGE_NS=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+
+      # 브랜치별 latest 태그 결정 (main → main-latest / 그 외 → dev-latest)
+      - name: Set branch latest tag
+        run: |
+          if [ "${GITHUB_REF_NAME}" = "main" ]; then
+            echo "LATEST_TAG=main-latest" >> $GITHUB_ENV
+          else
+            echo "LATEST_TAG=dev-latest" >> $GITHUB_ENV
+          fi
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+        # 만약 조직 정책으로 GITHUB_TOKEN 푸시가 막히면, Repo Secrets에 GHCR_PAT(classic, write:packages) 추가 후:
+        # username: ${{ github.repository_owner }}
+        # password: ${{ secrets.GHCR_PAT }}
+
+      - name: Build & Push (${{ matrix.id }})
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.context }}/Dockerfile
+          push: true
+          # 필요하면 플랫폼 다중 빌드도 가능: platforms: linux/amd64,linux/arm64
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NS }}/${{ matrix.image }}:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NS }}/${{ matrix.image }}:${{ env.LATEST_TAG }}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.ref.name=${{ github.ref_name }}
