@@ -1,0 +1,46 @@
+name: ci-pr
+on:
+  pull_request:
+    branches: [develop, main]
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - 'app/**'
+      - 'svc-*/**'
+      - '.github/workflows/ci-pr.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-${{ github.event.pull_request.head.sha || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  test-backend:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [svc-auth, svc-community, svc-penpal, svc-welfare]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: gradle/actions/setup-gradle@v3
+        with: { gradle-version: wrapper }
+      - name: Build & test (${{ matrix.service }})
+        working-directory: ${{ matrix.service }}
+        run: ./gradlew clean build test
+
+  test-frontend:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: app } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: app/package-lock.json
+      - run: npm ci
+      - run: npm run build
+      - run: npm test --if-present
