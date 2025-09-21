@@ -1,4 +1,5 @@
 import type { NextConfig } from 'next'
+import withPWA from 'next-pwa'
 
 const urls = {
   auth:      process.env.AUTH_INTERNAL_URL      ?? 'http://auth:8080',
@@ -21,4 +22,6 @@ const nextConfig: NextConfig = {
   },
 }
 
-export default nextConfig
+export default withPWA({
+    dest: 'public'
+})(nextConfig)
