@@ -43,47 +43,52 @@ export default function PenpalHomePage() {
         <span className="text-sm">펜팔 작성</span>
       </nav>
 
-        {/* 펜팔 섹션 */}
-        <section className="px-4 min-h-0 flex flex-col">
-          <h2 className="mb-2 text-sm text-gray-600">
-            펜팔 목록 (<strong>{penpals.length}</strong>/1000)
-          </h2>
-            <ul className="divide-y flex-1 overflow-y-auto min-h-0 pr-1">
-              {penpals.map((p) => (
-                <li key={p.id} className="flex h-14 items-center gap-3 px-2">
-                  <div className="grid h-10 w-10 place-items-center rounded-full bg-gray-200 text-3xl">
-                    {p.avatar ?? "👤"}
-                  </div>
-                  <span className="text-base font-medium">{p.name}</span>
-                </li>
-              ))}
-            </ul>
-        </section>
+      {/* 펜팔 섹션 */}
+      <section className="px-4 min-h-0 flex flex-col">
+        <h2 className="mb-2 text-sm text-gray-600">
+          펜팔 목록 (<strong>{penpals.length}</strong>/1000)
+        </h2>
+        <ul className="divide-y flex-1 overflow-y-auto min-h-0 pr-1">
+          {penpals.map((p) => (
+            <li key={p.id} className="flex h-14 items-center gap-3 px-2">
+              <div className="grid h-10 w-10 place-items-center rounded-full bg-gray-200 text-3xl">
+                {p.avatar ?? "👤"}
+              </div>
+              <span className="text-base font-medium">{p.name}</span>
+            </li>
+          ))}
+        </ul>
+      </section>
 
-        {/* 구분선: 섹션과 섹션 사이 */}
-        <hr className="mx-auto w-[90%] border-t-2 border-[#CCA57A]" />
+      {/* 구분선: 섹션과 섹션 사이 */}
+      <hr className="mx-auto w-[90%] border-t-2 border-[#CCA57A]" />
 
-        {/* 채팅 목록 섹션 */}
-        <section className="px-4 min-h-0 flex flex-col">
-          <h2 className="mb-2 text-sm text-gray-600">
-            채팅 목록 (<strong>{chats.length}</strong>/100)
-          </h2>
-            <ul className="divide-y rounded-lg border bg-white/50 flex-1 overflow-y-auto min-h-0 pr-1">
-              {chats.map((c) => (
-                <li key={c.id} className="flex h-14 items-center justify-between px-3">
-                  <div className="min-w-0">
-                    <div className="font-medium">{c.name}</div>
-                    <p className="truncate text-sm text-gray-600">{c.lastMessage}</p>
-                  </div>
-                  {c.unread > 0 && (
-                    <span className="rounded-full bg-black px-2 py-0.5 text-xs text-white">
-                      {c.unread}
-                    </span>
-                  )}
-                </li>
-              ))}
-            </ul>
-        </section>
+      {/* 채팅 목록 섹션 */}
+      <section className="px-4 min-h-0 flex flex-col">
+        <h2 className="mb-2 text-sm text-gray-600">
+          채팅 목록 (<strong>{chats.length}</strong>/100)
+        </h2>
+        <ul className="divide-y rounded-lg border bg-white/50 flex-1 overflow-y-auto min-h-0 pr-1">
+          {chats.map((c) => (
+            <li
+              key={c.id}
+              className="flex h-14 items-center justify-between px-3"
+            >
+              <div className="min-w-0">
+                <div className="font-medium">{c.name}</div>
+                <p className="truncate text-sm text-gray-600">
+                  {c.lastMessage}
+                </p>
+              </div>
+              {c.unread > 0 && (
+                <span className="rounded-full bg-black px-2 py-0.5 text-xs text-white">
+                  {c.unread}
+                </span>
+              )}
+            </li>
+          ))}
+        </ul>
+      </section>
     </main>
   );
 }
