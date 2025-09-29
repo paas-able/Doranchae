@@ -30,8 +30,10 @@ return (
       {/* --- 1. 편지 본문에서 flex-1 제거, break-words 추가 --- */}
       <p className="text-base break-words">{text}</p>
 
-      {/* --- 2. 보내는 사람 부분에 mt-auto 추가 --- */}
-      <p className="mt-auto pt-4 text-right text-sm font-bold">"{from}"로부터</p>
+      {/* --- 2. 보내는 사람 부분에 mt-auto 추가, escape 적용 --- */}
+      <p className="mt-auto pt-4 text-right text-sm font-bold">
+        &quot;{from.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;")}&quot;로부터
+      </p>
     </div>
   );
 }
