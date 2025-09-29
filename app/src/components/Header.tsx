@@ -11,7 +11,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import logo from '@assets/drch_logo.png';
 
 const Header: React.FC = () => {
-    const { pathname } = useRouter()
+    // const { pathname } = useRouter()
 
     return (
         <div className="w-full h-fit justify-between flex items-center px-[20px] py-[15px]">
