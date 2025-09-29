@@ -37,14 +37,9 @@ export default function CommunityWritePage() {
     >
       {/* iPhone 14 Pro Max(430px) 기준 */}
       <div className="mx-auto w-full max-w-[430px] flex flex-col flex-1">
-        {/* 상단 데드존 */}
-        <header className="sticky top-0 z-20 bg-neutral-300 text-center py-3 text-[clamp(14px,3.5vw,16px)] font-semibold">
-          데드존
-        </header>
-
         {/* 본문 */}
-        <main className="flex-1 px-4">
-          {/* 카드 컨테이너 (border/bg 제거됨) */}
+        <main className="flex-1 px-4 pb-8">
+          {/* 카드 컨테이너 */}
           <section className="mt-4 flex flex-col flex-1">
             {/* 타이틀 바 */}
             <div className="flex items-center justify-between px-4 py-4 border-b border-neutral-200">
@@ -108,11 +103,6 @@ export default function CommunityWritePage() {
             </form>
           </section>
         </main>
-
-        {/* 하단 데드존 */}
-        <footer className="sticky bottom-0 z-20 bg-neutral-300 text-center py-3 text-[clamp(14px,3.5vw,16px)] font-semibold">
-          데드존
-        </footer>
       </div>
     </div>
   );

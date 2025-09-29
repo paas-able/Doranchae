@@ -81,15 +81,11 @@ export default function CommunityPage() {
         backgroundColor: BG,
         color: TEXT_DARK,
         paddingTop: "env(safe-area-inset-top)",
-        paddingBottom: "env(safe-area-inset-bottom)",
+        paddingBottom: "max(env(safe-area-inset-bottom), 16px)", // 안전영역 확보
       }}
     >
       <div className="mx-auto w-full max-w-[430px] flex flex-col flex-1 relative">
-        <header className="sticky top-0 z-20 text-center py-3 text-[15px] font-semibold bg-neutral-300">
-          데드존
-        </header>
-
-        <main className="flex-1 px-4 pb-24">
+        <main className="flex-1 px-4 pb-28">
           {/* ===== 상단 영역 ===== */}
           <section className="pt-5">
             <div className="flex items-start justify-between">
@@ -183,21 +179,20 @@ export default function CommunityPage() {
           </section>
         </main>
 
-        {/* 글쓰기 FAB */}
+        {/* 글쓰기 FAB (데드존 삭제에 맞춰 안전영역 포함 위치 계산) */}
         <button
           type="button"
           aria-label="글쓰기"
           onClick={() => router.push("/community/communityWrite")}
-          className="fixed bottom-24 right-6 z-30 flex h-14 w-14 items-center justify-center rounded-full shadow-lg active:scale-95 transition"
-          style={{ backgroundColor: "#8B9744", boxShadow: "0 6px 12px rgba(0,0,0,0.15)" }}
+          className="fixed right-6 z-30 flex h-14 w-14 items-center justify-center rounded-full shadow-lg active:scale-95 transition"
+          style={{
+            backgroundColor: "#8B9744",
+            boxShadow: "0 6px 12px rgba(0,0,0,0.15)",
+            bottom: "calc(env(safe-area-inset-bottom) + 16px)",
+          }}
         >
           <img src={ICON_PENCIL} alt="글쓰기" className="h-6 w-6 invert" />
         </button>
-
-        {/* 하단 데드존 자리 */}
-        <footer className="sticky bottom-0 z-20 text-center py-3 text-[15px] font-semibold bg-neutral-300">
-          데드존
-        </footer>
       </div>
     </div>
   );

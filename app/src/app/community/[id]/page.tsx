@@ -44,7 +44,6 @@ export default function CommunityDetailPage() {
   const submitComment = (e: React.FormEvent) => {
     e.preventDefault();
     if (!comment.trim()) return;
-    // TODO: 백엔드 API 연동 시 POST /comments
     console.log("새 댓글:", comment);
     setComment("");
   };
@@ -60,17 +59,9 @@ export default function CommunityDetailPage() {
       }}
     >
       <div className="mx-auto w-full max-w-[430px] flex flex-col flex-1">
-        {/* 상단 데드존 */}
-        <header
-          className="sticky top-0 z-20 text-center py-3 text-[15px] font-semibold"
-          style={{ backgroundColor: "#E6E6E6" }}
-        >
-          데드존
-        </header>
-
         {/* 본문 */}
         <main className="flex-1 px-4">
-          <section className="mt-4 flex flex-col flex-1">
+          <section className="mt-4 flex flex-col">
             {/* 뒤로가기 */}
             <div className="mb-3">
               <button
@@ -238,14 +229,6 @@ export default function CommunityDetailPage() {
             </form>
           </section>
         </main>
-
-        {/* 하단 데드존 */}
-        <footer
-          className="sticky bottom-0 z-20 text-center py-3 text-[15px] font-semibold"
-          style={{ backgroundColor: "#E6E6E6" }}
-        >
-          데드존
-        </footer>
       </div>
     </div>
   );
