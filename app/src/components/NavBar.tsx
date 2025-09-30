@@ -16,7 +16,8 @@ import Image from 'next/image'
 import ieumi from '../../public/ieumi.png'
 
 const BottomNav: React.FC = () => {
-    const { pathname } = useRouter()
+    // const { pathname } = useRouter()
+    // 주석 추가
 
     return (
         <div className="fixed bottom-0 w-full h-fit">
