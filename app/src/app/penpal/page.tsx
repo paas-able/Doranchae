@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 
 type Penpal = { id: string; name: string; avatar?: string };
