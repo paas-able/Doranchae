@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import {useRouter} from "next/navigation";
+import {usePathname} from "next/navigation";
 import {SvgIcon} from "@mui/material";
 import InfoOutlineRoundedIcon from '@mui/icons-material/InfoOutlineRounded';
 import InfoRoundedIcon from '@mui/icons-material/InfoRounded';
@@ -16,8 +16,7 @@ import Image from 'next/image'
 import ieumi from '../../public/ieumi.png'
 
 const BottomNav: React.FC = () => {
-    // const { pathname } = useRouter()
-    // 주석 추가
+    const pathname = usePathname()
 
     return (
         <div className="fixed bottom-0 w-full h-fit">
@@ -25,28 +24,28 @@ const BottomNav: React.FC = () => {
                 {/*왼쪽 아이콘 묶음*/}
                 <div className="flex justify-between w-[125px]">
                     <Link href="/welfare" className="flex flex-col items-center">
-                        <SvgIcon className="" component={ pathname === 'welfare' ? InfoRoundedIcon : InfoOutlineRoundedIcon} sx={{ fontSize: 30 }}/>
+                        <SvgIcon className="" component={ pathname === '/welfare' ? InfoRoundedIcon : InfoOutlineRoundedIcon} sx={{ fontSize: 30 }}/>
                         <label className="block font-semibold">복지 정보</label>
                     </Link>
                     <Link href="/penpal" className="flex flex-col items-center">
-                        <SvgIcon className="" component={ pathname === 'penpal' ? EmailIcon : EmailOutlinedIcon } sx={{ fontSize: 30 }}/>
+                        <SvgIcon className="" component={ pathname === '/penpal' ? EmailIcon : EmailOutlinedIcon } sx={{ fontSize: 30 }}/>
                         <label className="block font-semibold">펜팔</label>
                     </Link>
                 </div>
 
                 {/*가운데 아이콘*/}
-                <div className="bg-brown2 border-2 border-green1 w-[80px] h-[80px] rounded-full mb-8 flex justify-center items-center">
+                <Link href="/ieumi" className="bg-brown2 border-2 border-green1 w-[80px] h-[80px] rounded-full mb-8 flex justify-center items-center">
                     <Image src={ieumi} alt="AI Chat Button" width={45} height={60}/>
-                </div>
+                </Link>
 
                 {/*오른쪽 아이콘 묶음*/}
                 <div className="flex justify-between w-[125px]">
                     <Link href="/community" className="flex flex-col items-center">
-                        <SvgIcon className="" component={ pathname === 'community' ? ArticleIcon : ArticleOutlinedIcon} sx={{ fontSize: 30 }}/>
+                        <SvgIcon className="" component={ pathname === '/community' ? ArticleIcon : ArticleOutlinedIcon} sx={{ fontSize: 30 }}/>
                         <label className="block font-semibold">커뮤니티</label>
                     </Link>
                     <Link href="/mypage" className="flex flex-col items-center">
-                        <SvgIcon className="" component={ pathname === 'mypage' ? AccountCircleIcon : AccountCircleOutlinedIcon } sx={{ fontSize: 30 }}/>
+                        <SvgIcon className="" component={ pathname === '/mypage' ? AccountCircleIcon : AccountCircleOutlinedIcon } sx={{ fontSize: 30 }}/>
                         <label className="block font-semibold">내 정보</label>
                     </Link>
                 </div>
