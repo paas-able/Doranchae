@@ -4,14 +4,22 @@ import jakarta.persistence.*
 import java.time.LocalDateTime
 
 @Entity
-@Table(name = "user_chat")
-data class UserChat(
-        @Id
-        @GeneratedValue(strategy = GenerationType.IDENTITY)
-        val id: Long = 0,
+@Table(name = "userChat")
+class UserChat (
+        @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+        val id: Long? = null,
 
-        val chatRoomId: Long,
-        val senderId: Long,
+
+        @ManyToOne
+        @JoinColumn(name = "chatRoom_id")
+        val chatRoom: ChatRoom,
+
+        @Column(nullable = false)
+        val senderId: Long = 0L,
+
+        @Column(nullable = false, columnDefinition = "TEXT")
         val content: String,
-        val sentAt: LocalDateTime = LocalDateTime.now()
+
+        @Column(nullable = false)
+        val sentAt: LocalDateTime
 )

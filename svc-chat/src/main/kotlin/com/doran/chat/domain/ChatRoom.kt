@@ -2,30 +2,33 @@ package com.doran.chat.domain
 
 import jakarta.persistence.*
 import java.time.LocalDateTime
+import java.util.UUID
 
 @Entity
-@Table(name = "chat_room")
-data class ChatRoom(
+@Table(name = "chatRoom")
+class ChatRoom(
         @Id
         @GeneratedValue(strategy = GenerationType.IDENTITY)
-        val id: Long = 0,
+        val id: Long = 0L,
 
-        @ElementCollection
-        @CollectionTable(name = "chat_room_participants", joinColumns = [JoinColumn(name = "chat_room_id")])
-        @Column(name = "participant_id")
-        val participantIds: List<Long> = listOf(),
+        @Column(nullable = false)
+        val user1Id: Long,
 
-        @Enumerated(EnumType.STRING)
-        var status: ChatStatus = ChatStatus.ACTIVE,
+        @Column(nullable = false)
+        val user2Id: Long
+
+){
 
         var lastMessageAt: LocalDateTime? = null
-) {
-        fun endChatRoom(): LocalDateTime {
-                status = ChatStatus.INACTIVE
-                return LocalDateTime.now()
-        }
 
-        fun updateLastMessageTime() {
-                lastMessageAt = LocalDateTime.now()
+        @Column
+        @Enumerated(EnumType.STRING)
+        var status: ChatStatus = ChatStatus.ACTIVATE
+
+        enum class ChatStatus(
+                val status: String
+        ){
+                ACTIVATE("활성"),
+                INACVTIVATE("비활성")
         }
 }
