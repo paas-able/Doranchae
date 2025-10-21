@@ -4,6 +4,8 @@ import com.doran.penpal.entity.Penpal
 import com.doran.penpal.entity.PenpalMessage
 import com.doran.penpal.repository.PenpalMessageRepository
 import com.doran.penpal.repository.PenpalRepository
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.util.*
@@ -49,5 +51,10 @@ class PenpalService(
         val newMessageList = listOf(message.id)
         val newPenpal = Penpal(participantIds = participants, messages = newMessageList)
         return penpalRepository.save(newPenpal)
+    }
+
+    @Transactional
+    fun retrievePenpals(userId: UUID, pageable: Pageable): Page<Penpal> {
+        return penpalRepository.findPenpalByParticipantIdsContaining(userId, pageable)
     }
 }
