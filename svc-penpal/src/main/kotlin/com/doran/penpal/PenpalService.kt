@@ -20,16 +20,18 @@ class PenpalService(
 
         // TODO: req.sendTo를 ID로 갖는 사용자의 존재 여부 확인 필요
 
-        // 새 메세지 생성
-        val newPenpalMessage = createNewMessage(req = req)
+        // 새 메세지 선언
+        val newPenpalMessage: PenpalMessage
 
         // 해당 펜팔의 유무 확인
         val exPenpal = findExistingPenpal(sendFrom = req.sendFrom, sendTo = req.sendTo)
-        if (exPenpal != null) {
-            exPenpal.addMessage(newPenpalMessage)
+
+        newPenpalMessage = if (exPenpal != null) {
+            createNewMessage(req = req, exPenpal)
 
         } else {
-            createNewPenpal(req = req, message = newPenpalMessage)
+            val newPenpal = createNewPenpal(req = req)
+            createNewMessage(req = req, newPenpal)
         }
 
         return newPenpalMessage
@@ -41,15 +43,14 @@ class PenpalService(
         return penpalRepository.findPenpalByParticipants(participants, 2L).orElse(null)
     }
 
-    private fun createNewMessage(req: SendToRequest): PenpalMessage {
+    private fun createNewMessage(req: SendToRequest, penpal: Penpal): PenpalMessage {
         val initialStatus = MessageStatus(status = Status.SENT)
-        val newMessage = PenpalMessage(sendFrom = req.sendFrom, sendTo = req.sendTo, content = req.content, status = initialStatus)
+        val newMessage = PenpalMessage(sendFrom = req.sendFrom, sendTo = req.sendTo, content = req.content, status = initialStatus, penpal = penpal)
         return penpalMessageRepository.save(newMessage)
     }
-    private fun createNewPenpal(req: SendToRequest, message: PenpalMessage): Penpal {
+    private fun createNewPenpal(req: SendToRequest): Penpal {
         val participants = setOf(req.sendFrom, req.sendTo)
-        val newMessageList = listOf(message.id)
-        val newPenpal = Penpal(participantIds = participants, messages = newMessageList)
+        val newPenpal = Penpal(participantIds = participants)
         return penpalRepository.save(newPenpal)
     }
 

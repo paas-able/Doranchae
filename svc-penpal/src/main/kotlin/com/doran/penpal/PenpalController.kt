@@ -39,9 +39,14 @@ class PenpalController(private val penpalService: PenpalService) {
             emptyList()
         }
 
-        println(conversations)
         val responseDto = PenpalListResponse(penpals = conversations, page = pageInfo)
         return ApiResponse.success(responseDto)
+    }
+
+    @GetMapping("/messages")
+    fun retrieveMessages(@Valid @RequestBody req: RetrieveMesssageRequest, pageable: Pageable): ResponseEntity<DataResponse<String>> {
+
+        return ApiResponse.success("test")
     }
 }
 
@@ -79,6 +84,11 @@ data class PageInfo (
     var isLast: Boolean,
     var currentPage: Int,
     var totalPages: Int
+)
+
+data class RetrieveMesssageRequest (
+    @field:NotNull(message = "조회하고자 하는 펜팔의 ID를 지정해주세요.")
+    val penpalId: UUID
 )
 
 /*Function*/

@@ -25,6 +25,10 @@ data class PenpalMessage (
     @Embedded
     var status: MessageStatus,
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "penpal_id", nullable = false)
+    val penpal: Penpal,
+
     @Column(nullable = false)
     val createdAt: LocalDateTime = LocalDateTime.now(),
 ) {

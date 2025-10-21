@@ -16,11 +16,6 @@ data class Penpal(
     @Column(name = "participant_id", columnDefinition = "binary(16)")
     val participantIds: Set<UUID>,
 
-    @ElementCollection(fetch = FetchType.LAZY)
-    @CollectionTable(name = "penpal_message_ref", joinColumns = [JoinColumn(name = "penpal_id")])
-    @OrderColumn(name = "list_order")
-    var messages: List<UUID>,
-
     var isActive: Boolean = true,
 
     var isFriend: Boolean = false,
@@ -28,9 +23,4 @@ data class Penpal(
     val createdAt: LocalDateTime = LocalDateTime.now(),
 
     var updatedAt: LocalDateTime = LocalDateTime.now()
-) {
-    fun addMessage(newMessage: PenpalMessage) {
-        this.messages += newMessage.id
-        this.updatedAt = LocalDateTime.now()
-    }
-}
+)
