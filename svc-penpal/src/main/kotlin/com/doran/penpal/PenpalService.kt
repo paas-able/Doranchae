@@ -72,4 +72,24 @@ class PenpalService(
 
         return messages
     }
+
+    @Transactional
+    fun inactivePenpal(penpalId: UUID): Penpal {
+        val penpal = penpalRepository.findById(penpalId).orElseThrow { CustomException(ErrorCode.PENPAL_NOT_FOUND) } // TODO: 요청한 유저의 펜팔인지 확인
+        return penpal.beFriend()
+    }
+
+    @Transactional
+    fun closePenpal(penpalId: UUID): Boolean {
+        val penpal = penpalRepository.findById(penpalId).orElseThrow { CustomException(ErrorCode.PENPAL_NOT_FOUND) } // TODO: 요청한 유저의 펜팔인지 확인
+
+        val messageDeleteResult = penpalMessageRepository.deleteAllByPenpal(penpal)
+        val penpalDeleteResult = penpalRepository.deleteById(penpalId)
+
+        if (messageDeleteResult == Unit && penpalDeleteResult == Unit) {
+            return true
+        } else {
+            throw CustomException(ErrorCode.COMMON_INTERNAL_ERROR)
+        }
+    }
 }

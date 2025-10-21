@@ -1,5 +1,7 @@
 package com.doran.penpal.entity
 
+import com.doran.penpal.global.ErrorCode
+import com.doran.penpal.global.exception.CustomException
 import jakarta.persistence.*
 import java.time.LocalDateTime
 import java.util.*
@@ -23,4 +25,15 @@ data class Penpal(
     val createdAt: LocalDateTime = LocalDateTime.now(),
 
     var updatedAt: LocalDateTime = LocalDateTime.now()
-)
+) {
+    fun beFriend(): Penpal {
+        if (!this.isActive) {
+            throw CustomException(ErrorCode.PENPAL_ALREADY_INACTIVE)
+        }
+
+        this.isActive = false
+        this.isFriend = true
+        this.updatedAt = LocalDateTime.now()
+        return this
+    }
+}

@@ -2,7 +2,10 @@ package com.doran.penpal
 
 import com.doran.penpal.entity.PenpalMessage
 import com.doran.penpal.global.ApiResponse
+import com.doran.penpal.global.BaseResponse
 import com.doran.penpal.global.DataResponse
+import com.doran.penpal.global.ErrorCode
+import com.doran.penpal.global.exception.CustomException
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
@@ -56,6 +59,26 @@ class PenpalController(private val penpalService: PenpalService) {
 
         val responseDto = RetrieveMessageResponse(messages = messages, page = pageInfo)
         return ApiResponse.success(responseDto)
+    }
+
+    @PatchMapping("/{penpalId}/switch")
+    fun switchController(@PathVariable penpalId: UUID): ResponseEntity<BaseResponse>{
+        val switchResult = penpalService.inactivePenpal(penpalId = penpalId)
+        if (!switchResult.isActive) {
+            return ApiResponse.successWithNoData()
+        } else {
+            throw CustomException(ErrorCode.COMMON_INTERNAL_ERROR)
+        }
+    }
+
+    @DeleteMapping("/{penpalId}/close")
+    fun closeController(@PathVariable penpalId: UUID): ResponseEntity<BaseResponse>{
+        val switchResult = penpalService.closePenpal(penpalId = penpalId)
+        if (switchResult) {
+            return ApiResponse.successWithNoData()
+        } else {
+            throw CustomException(ErrorCode.COMMON_INTERNAL_ERROR)
+        }
     }
 }
 
