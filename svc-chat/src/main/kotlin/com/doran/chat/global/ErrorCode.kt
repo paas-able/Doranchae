@@ -15,5 +15,6 @@ enum class ErrorCode(
 
     //CHATBOT
     CHAT_DUPLICATE_ROOM(HttpStatus.BAD_REQUEST, "CH001", "이미 두 유저의 채팅방이 존재합니다."),
-    CHAT_ROOM_NOT_FOUND(HttpStatus.NOT_FOUND, "CH002", "채팅방을 찾을 수 없습니다.")
+    CHAT_ROOM_NOT_FOUND(HttpStatus.NOT_FOUND, "CH002", "채팅방을 찾을 수 없습니다."),
+    CHAT_ROOM_INACTIVATED(HttpStatus.BAD_REQUEST,"CH003","비활성화된 채팅입니다.")
 }

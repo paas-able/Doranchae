@@ -1,8 +1,10 @@
 package com.doran.chat.controller
 
+import com.doran.chat.domain.ChatRoom
 import com.doran.chat.domain.UserChat
 import com.doran.chat.service.ChatService
 import com.doran.chat.global.ApiResponse
+import com.doran.chat.global.BaseResponse
 import com.doran.chat.global.DataResponse
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
@@ -24,9 +26,17 @@ class ChatRestController(
         return ApiResponse.success(chatService.getMessages(request.chatRoomId));
     }
 
-//    @PostMapping("/room/{roomId}/end")
-//    fun deleteChatRoom(@PathVariable roomId: Long) =
-//        chatService.endChatRoom(roomId)
+    @GetMapping("/list")
+    fun getChatRoomList(@RequestBody request: GetUserChatRoomsRequest): ResponseEntity<DataResponse<List<ChatRoom>>> {
+        return ApiResponse.success(chatService.getChatRoomList(request.userId))
+    }
+
+    @PostMapping("/end")
+    fun deleteChatRoom(@RequestBody request: GetMessagesRequest): ResponseEntity<BaseResponse> {
+        chatService.endChatRoom(request.chatRoomId)
+        return ApiResponse.successWithNoData()
+    }
+
 }
 
 data class CreateChatRoomRequest(
@@ -36,5 +46,9 @@ data class CreateChatRoomRequest(
 
 data class GetMessagesRequest(
     val chatRoomId: Long
+)
+
+data class GetUserChatRoomsRequest(
+    val userId : Long
 )
 

@@ -8,6 +8,7 @@ import com.doran.chat.global.ErrorCode
 import com.doran.chat.global.exception.CustomException
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
+import kotlin.math.E
 
 @Service
 class ChatService(
@@ -15,15 +16,15 @@ class ChatService(
     private val userChatRepository: UserChatRepository
 ) {
 
-    fun createChatRoom(user1Id: Long, user2Id: Long): Long {
-        val existingRoom = chatRoomRepository.findChatRoomByUser1IdAndUser2Id(user1Id, user2Id)
-        if (existingRoom != null) {
-            throw CustomException(ErrorCode.CHAT_DUPLICATE_ROOM)
-        }
+    fun createChatRoom(userId1: Long, userId2: Long): Long {
+
+        val participantIds: Set<Long> = setOf(userId1,userId2)
+        val existingRoom = chatRoomRepository.findChatRoomByParticipantIds(participantIds, participantIds.size)
+            if (existingRoom.isPresent)
+                throw CustomException(ErrorCode.CHAT_DUPLICATE_ROOM)
+
         val chatRoom = ChatRoom(
-            // user1Id와 user2Id 중 작은 값이 항상 user1Id로 가도록 해서 중복 방지
-            user1Id = minOf(user1Id, user2Id),
-            user2Id = maxOf(user1Id, user2Id)
+            participantIds = setOf(userId1,userId2)
         )
 
         val savedChatRoom = chatRoomRepository.save(chatRoom)
@@ -45,15 +46,25 @@ class ChatService(
         return userChatRepository.save(chat)
     }
 
-    fun getMessages(chatRoomId: Long): List<UserChat> {
-        chatRoomRepository.findById(chatRoomId)
-            .orElseThrow { CustomException(ErrorCode.CHAT_ROOM_NOT_FOUND) }
-        return userChatRepository.findByChatRoomIdOrderBySentAtAsc(chatRoomId)
+    fun getChatRoomList(userId: Long): List<ChatRoom>{
+        return chatRoomRepository.findByParticipantIdsContainingAndStatus(userId, ChatRoom.ChatStatus.ACTIVATE)
     }
 
-//    fun endChatRoom(chatRoomId: Long): Long {
-//        chatRoomRepository.findById(chatRoomId)?:throw IllegalArgumentException("없다네")
-//        chatRoom.endChatRoom()
-//        chatRoomRepository.save(chatRoom)
-//    }
+    fun getMessages(chatRoomId: Long): List<UserChat> {
+        val chatRoom =chatRoomRepository.findById(chatRoomId)
+            .orElseThrow { CustomException(ErrorCode.CHAT_ROOM_NOT_FOUND) }
+
+        if (chatRoom.status == ChatRoom.ChatStatus.INACVTIVATE)
+            throw CustomException(ErrorCode.CHAT_ROOM_INACTIVATED)
+
+        return userChatRepository.findByChatRoomIdOrderBySentAtAsc(chatRoomId)
+
+    }
+
+    fun endChatRoom(chatRoomId: Long): ChatRoom {
+        val chatRoom = chatRoomRepository.findById(chatRoomId)
+            .orElseThrow { (CustomException(ErrorCode.CHAT_ROOM_NOT_FOUND)) }
+        chatRoom.status = ChatRoom.ChatStatus.INACVTIVATE
+        return chatRoomRepository.save(chatRoom)
+    }
 }
