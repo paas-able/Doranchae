@@ -2,6 +2,8 @@ package com.doran.penpal
 
 import com.doran.penpal.entity.Penpal
 import com.doran.penpal.entity.PenpalMessage
+import com.doran.penpal.global.ErrorCode
+import com.doran.penpal.global.exception.CustomException
 import com.doran.penpal.repository.PenpalMessageRepository
 import com.doran.penpal.repository.PenpalRepository
 import org.springframework.data.domain.Page
@@ -57,5 +59,17 @@ class PenpalService(
     @Transactional
     fun retrievePenpals(userId: UUID, pageable: Pageable): Page<Penpal> {
         return penpalRepository.findPenpalByParticipantIdsContaining(userId, pageable)
+    }
+
+    @Transactional
+    fun retrieveMessages(penpalId:UUID, pageable: Pageable): Page<PenpalMessage> {
+        val penpal = penpalRepository.findById(penpalId).orElseThrow { CustomException(ErrorCode.PENPAL_NOT_FOUND) } // TODO: 요청한 유저의 펜팔인지 확인
+        val messages = penpalMessageRepository.findAllByPenpal(penpal, pageable)
+
+        if (messages.last().status == MessageStatus(status = Status.SENT)) {
+            messages.last().updateStatus(MessageStatus(status = Status.READ))
+        }
+
+        return messages
     }
 }

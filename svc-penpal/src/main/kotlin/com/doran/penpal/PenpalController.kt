@@ -1,6 +1,5 @@
 package com.doran.penpal
 
-import com.doran.penpal.entity.Penpal
 import com.doran.penpal.entity.PenpalMessage
 import com.doran.penpal.global.ApiResponse
 import com.doran.penpal.global.DataResponse
@@ -26,12 +25,11 @@ class PenpalController(private val penpalService: PenpalService) {
 
     @GetMapping("/list")
     fun retrievePenpals(@RequestBody req: PenpalListRequest, pageable: Pageable): ResponseEntity<DataResponse<PenpalListResponse>>{
-        val searchResult = penpalService.retrievePenpals(req.userId, pageable)
-        println(searchResult.totalElements)
-        val pageInfo = createPenpalPageInfo(searchResult)
+        val result = penpalService.retrievePenpals(req.userId, pageable)
+        val pageInfo = createPageInfo(result)
 
-        val conversations: List<PenpalInfo> = if (!searchResult.isEmpty) {
-            searchResult.content.map { item ->
+        val penpals: List<PenpalInfo> = if (!result.isEmpty) {
+            result.content.map { item ->
                 val opponentId = item.participantIds.firstOrNull { it != req.userId }
                 PenpalInfo(id = item.id, opponentId = opponentId)
             }
@@ -39,14 +37,25 @@ class PenpalController(private val penpalService: PenpalService) {
             emptyList()
         }
 
-        val responseDto = PenpalListResponse(penpals = conversations, page = pageInfo)
+        val responseDto = PenpalListResponse(penpals = penpals, page = pageInfo)
         return ApiResponse.success(responseDto)
     }
 
     @GetMapping("/messages")
-    fun retrieveMessages(@Valid @RequestBody req: RetrieveMesssageRequest, pageable: Pageable): ResponseEntity<DataResponse<String>> {
+    fun retrieveMessages(@Valid @RequestBody req: RetrieveMesssageRequest, pageable: Pageable): ResponseEntity<DataResponse<RetrieveMessageResponse>> {
+        val result = penpalService.retrieveMessages(penpalId = req.penpalId, pageable = pageable)
+        val pageInfo = createPageInfo(result)
 
-        return ApiResponse.success("test")
+        val messages: List<PenpalMesssageInfo> = if (!result.isEmpty) {
+            result.content.map { it ->
+                PenpalMesssageInfo(id = it.id, content = it.content, sentAt = it.createdAt, status = it.status.toString(), isFromUser = (it.sendFrom == req.userId))
+            }
+        } else {
+            emptyList()
+        }
+
+        val responseDto = RetrieveMessageResponse(messages = messages, page = pageInfo)
+        return ApiResponse.success(responseDto)
     }
 }
 
@@ -88,10 +97,24 @@ data class PageInfo (
 
 data class RetrieveMesssageRequest (
     @field:NotNull(message = "조회하고자 하는 펜팔의 ID를 지정해주세요.")
-    val penpalId: UUID
+    val penpalId: UUID,
+    val userId: UUID, // TODO: Spring Security 구현 시 삭제
+)
+
+data class RetrieveMessageResponse (
+    val messages: List<PenpalMesssageInfo>,
+    val page: PageInfo
+)
+
+data class PenpalMesssageInfo (
+    val id: UUID,
+    val content: String,
+    val sentAt: LocalDateTime,
+    val status: String,
+    val isFromUser: Boolean, // 송수신 여부
 )
 
 /*Function*/
-fun createPenpalPageInfo(info: Page<Penpal>): PageInfo{
+fun <T> createPageInfo(info: Page<T>): PageInfo{
     return PageInfo(isFirst = info.isFirst, isLast = info.isLast, currentPage = info.number, totalPages = info.totalPages)
 }
