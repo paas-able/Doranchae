@@ -9,7 +9,6 @@ class UserChat (
         @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
         val id: Long? = null,
 
-
         @ManyToOne
         @JoinColumn(name = "chatRoom_id")
         val chatRoom: ChatRoom,

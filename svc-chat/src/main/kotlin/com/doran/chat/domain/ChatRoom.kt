@@ -11,11 +11,13 @@ class ChatRoom(
         @GeneratedValue(strategy = GenerationType.IDENTITY)
         val id: Long = 0L,
 
-        @Column(nullable = false)
-        val user1Id: Long,
-
-        @Column(nullable = false)
-        val user2Id: Long
+        @ElementCollection(fetch = FetchType.EAGER)
+        @CollectionTable(
+                name = "chat_room_participants",
+                joinColumns = [JoinColumn(name = "chat_room_id")]
+        )
+        @Column(name = "participant_id", nullable = false)
+        val participantIds: Set<Long> = emptySet(),
 
 ){
 
