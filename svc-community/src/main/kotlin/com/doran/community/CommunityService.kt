@@ -112,4 +112,21 @@ class CommunityService(
         val newComment = Comment(parentId = req.parentId, authorId = req.authorId, content = req.content, post = post)
         return commentRepository.save(newComment)
     }
+
+    @Transactional
+    fun deleteComment(commentId: UUID, userId: UUID) : Boolean{
+        val comment = commentRepository.findById(commentId).orElseThrow{throw CustomException(ErrorCode.COMMENT_NOT_FOUND)}
+
+        if (comment.authorId != userId) {
+            throw CustomException(ErrorCode.NOT_YOUR_COMMENT)
+        }
+
+        val deleteChildrenResult = commentRepository.deleteAllByParentId(commentId)
+        val deleteResult = commentRepository.delete(comment)
+        if (deleteChildrenResult == Unit && deleteResult == Unit) {
+            return true
+        } else {
+            throw CustomException(ErrorCode.COMMON_INTERNAL_ERROR)
+        }
+    }
 }

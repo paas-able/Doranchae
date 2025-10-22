@@ -7,4 +7,5 @@ import java.util.UUID
 
 @Repository
 interface CommentRepository: JpaRepository<Comment, UUID> {
+    fun deleteAllByParentId(parentId: UUID)
 }

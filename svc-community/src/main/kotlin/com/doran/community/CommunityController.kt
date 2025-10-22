@@ -1,6 +1,7 @@
 package com.doran.community
 
 import com.doran.penpal.global.ApiResponse
+import com.doran.penpal.global.BaseResponse
 import com.doran.penpal.global.DataResponse
 import com.doran.penpal.global.ErrorCode
 import com.doran.penpal.global.exception.CustomException
@@ -16,14 +17,14 @@ import java.util.UUID
 class CommunityController(
     val communityService: CommunityService
 ) {
-    @PostMapping("/post")
+    @PostMapping("/posts")
     fun createPost(@Valid @RequestBody req: CreatePostRequest): ResponseEntity<DataResponse<CreatePostResponse>> {
         val newPost = communityService.createPost(req)
         val responseDto = CreatePostResponse(postId = newPost.id, createdAt = newPost.createdAt)
         return ApiResponse.success(responseDto)
     }
 
-    @PatchMapping("/{postId}/edit")
+    @PatchMapping("/posts/{postId}")
     fun editPost(@PathVariable postId: UUID, @Valid @RequestBody req: EditPostRequest): ResponseEntity<DataResponse<PatchResponse>> {
         // editPart 검증
         val editPartFilter = listOf("both", "title", "content")
@@ -36,19 +37,19 @@ class CommunityController(
         return ApiResponse.success(PatchResponse(updatedAt = editResult.updatedAt))
     }
 
-    @PostMapping("/{postId}/like")
+    @PostMapping("/posts/{postId}/like")
     fun likePost(@PathVariable postId: UUID, @RequestBody req: TempUserIdRequest): ResponseEntity<DataResponse<PatchResponse>> {
         val likeResult = communityService.likePost(postId, req.userId)
         return ApiResponse.success(PatchResponse(updatedAt = likeResult.updatedAt))
     }
 
-    @DeleteMapping("/{postId}/like")
+    @DeleteMapping("/posts/{postId}/like")
     fun unlikePost(@PathVariable postId: UUID, @RequestBody req: TempUserIdRequest): ResponseEntity<DataResponse<PatchResponse>> {
         val unlikeResult = communityService.unlikePost(postId, req.userId)
         return ApiResponse.success(PatchResponse(updatedAt = unlikeResult.updatedAt))
     }
 
-    @GetMapping("/{postId}")
+    @GetMapping("/posts/{postId}")
     fun retrievePost(@PathVariable postId: UUID, @RequestBody req: TempUserIdRequest): ResponseEntity<DataResponse<RetrievePostResponse>> {
         val post = communityService.retrievePost(postId)
         val isLike = communityService.retrievePostLike(postId, req.userId)
@@ -60,11 +61,21 @@ class CommunityController(
         return ApiResponse.success(responseDto)
     }
 
-    @PostMapping("/{postId}/comment")
+    @PostMapping("/comment/{postId}")
     fun createComment(@PathVariable postId: UUID, @RequestBody req: CreateCommentRequest): ResponseEntity<DataResponse<CreateCommentResponse>> {
         val newComment = communityService.createComment(postId, req)
         val responseDto = CreateCommentResponse(commentId = newComment.id, createdAt = newComment.createdAt)
         return ApiResponse.success(responseDto)
+    }
+
+    @DeleteMapping("/comment/{commentId}")
+    fun deleteComment(@PathVariable commentId: UUID, @RequestBody req: TempUserIdRequest): ResponseEntity<BaseResponse> {
+        val deleteResult = communityService.deleteComment(commentId, req.userId)
+        if (deleteResult) {
+            return ApiResponse.successWithNoData()
+        } else {
+            throw CustomException(ErrorCode.COMMON_INTERNAL_ERROR)
+        }
     }
 }
 
