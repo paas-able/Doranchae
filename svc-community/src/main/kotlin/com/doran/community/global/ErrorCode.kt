@@ -12,4 +12,7 @@ enum class ErrorCode(
     COMMON_BAD_REQUEST(HttpStatus.BAD_REQUEST, "COMM400", "Bad Request"),
     COMMON_UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "COMM401", "Unauthorized"),
     COMMON_INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "COMM500", "Internal Server Error"),
+
+    // COMMUNITY
+    POST_ALREADY_EDITED(HttpStatus.BAD_REQUEST, "POST4001", "수정은 1회만 가능합니다"),
 }
