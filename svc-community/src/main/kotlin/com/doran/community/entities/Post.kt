@@ -1,7 +1,5 @@
 package com.doran.community.entities
 
-import com.doran.penpal.global.ErrorCode
-import com.doran.penpal.global.exception.CustomException
 import jakarta.persistence.*
 import java.time.LocalDateTime
 import java.util.UUID
@@ -40,10 +38,6 @@ data class Post(
     }
 
     fun updatePost(editPart: String, newTitle: String?, newContent: String?): Post {
-        if (this.isEdited) {
-            throw CustomException(ErrorCode.POST_ALREADY_EDITED)
-        }
-
         if (editPart == "title" && newTitle != null) {
             this.title = newTitle
         } else if (editPart == "content" && newContent != null) {
@@ -52,6 +46,9 @@ data class Post(
             this.title = newTitle
             this.content = newContent
         }
+
+        this.isEdited = true
+        this.updatedAt = LocalDateTime.now()
 
         return this
     }

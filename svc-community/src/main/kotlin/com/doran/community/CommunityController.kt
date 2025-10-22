@@ -2,9 +2,14 @@ package com.doran.community
 
 import com.doran.penpal.global.ApiResponse
 import com.doran.penpal.global.DataResponse
+import com.doran.penpal.global.ErrorCode
+import com.doran.penpal.global.exception.CustomException
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
 import org.springframework.http.ResponseEntity
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PatchMapping
+import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
@@ -20,7 +25,23 @@ class CommunityController(
     @PostMapping("/post")
     fun createPost(@Valid @RequestBody req: CreatePostRequest): ResponseEntity<DataResponse<CreatePostResponse>> {
         val newPost = communityService.createPost(req)
+        println(newPost.id)
         val responseDto = CreatePostResponse(postId = newPost.id, postedAt = newPost.createdAt)
+        return ApiResponse.success(responseDto)
+    }
+
+    @PatchMapping("/{postId}/edit")
+    fun editPost(@PathVariable postId: UUID, @Valid @RequestBody req: EditPostRequest): ResponseEntity<DataResponse<EditPostResponse>> {
+        // editPart 검증
+        val editPartFilter = listOf("both", "title", "content")
+        if (!editPartFilter.contains(req.editPart)) {
+            throw CustomException(ErrorCode.WRONG_EDIT_PART)
+        }
+
+        // 수정
+        val editResult = communityService.editPost(postId, req)
+
+        val responseDto= EditPostResponse(updatedAt = editResult.updatedAt)
         return ApiResponse.success(responseDto)
     }
 }
@@ -29,10 +50,8 @@ class CommunityController(
 data class CreatePostRequest (
     @field:NotBlank(message = "제목은 필수입니다.")
     val title: String,
-
     @field:NotBlank(message = "내용은 필수입니다.")
     val content: String,
-
     // TODO: Spring Security 적용 시 삭제
     val authorId: UUID
 )
@@ -40,4 +59,15 @@ data class CreatePostRequest (
 data class CreatePostResponse (
     val postId: UUID,
     val postedAt: LocalDateTime
+)
+
+data class EditPostRequest (
+    @field:NotBlank(message = "수정 파트를 지정해주세요")
+    val editPart: String,
+    val newTitle: String?,
+    val newContent: String?
+)
+
+data class EditPostResponse (
+    val updatedAt: LocalDateTime
 )
