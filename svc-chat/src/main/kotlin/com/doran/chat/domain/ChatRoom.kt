@@ -8,18 +8,18 @@ import java.util.UUID
 @Table(name = "chatRoom")
 class ChatRoom(
         @Id
-        @GeneratedValue(strategy = GenerationType.IDENTITY)
-        val id: Long = 0L,
+        @Column(columnDefinition = "binary(16)")
+        val id: UUID = UUID.randomUUID(),
 
         @ElementCollection(fetch = FetchType.EAGER)
         @CollectionTable(
                 name = "chat_room_participants",
                 joinColumns = [JoinColumn(name = "chat_room_id")]
         )
-        @Column(name = "participant_id", nullable = false)
-        val participantIds: Set<Long> = emptySet(),
+        @Column(name = "participant_id", columnDefinition = "binary(16)")
+        val participantIds: Set<UUID>
 
-){
+        ){
 
         var lastMessageAt: LocalDateTime? = null
 
