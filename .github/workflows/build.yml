@@ -9,6 +9,7 @@ on:
       - 'svc-community/**'
       - 'svc-penpal/**'
       - 'svc-welfare/**'
+      - 'svc-chat/**' 
       - '.github/workflows/build.yml'
   workflow_dispatch:
 
@@ -44,6 +45,9 @@ jobs:
           - id: welfare
             context: ./svc-welfare
             image: svc-welfare
+          - id: chat
+            context: ./svc-chat
+            image: svc-chat
           - id: app
             context: ./app
             image: app
