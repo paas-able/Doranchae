@@ -61,14 +61,14 @@ class CommunityController(
         return ApiResponse.success(responseDto)
     }
 
-    @PostMapping("/comment/{postId}")
+    @PostMapping("/comments/{postId}")
     fun createComment(@PathVariable postId: UUID, @RequestBody req: CreateCommentRequest): ResponseEntity<DataResponse<CreateCommentResponse>> {
         val newComment = communityService.createComment(postId, req)
         val responseDto = CreateCommentResponse(commentId = newComment.id, createdAt = newComment.createdAt)
         return ApiResponse.success(responseDto)
     }
 
-    @DeleteMapping("/comment/{commentId}")
+    @DeleteMapping("/comments/{commentId}")
     fun deleteComment(@PathVariable commentId: UUID, @RequestBody req: TempUserIdRequest): ResponseEntity<BaseResponse> {
         val deleteResult = communityService.deleteComment(commentId, req.userId)
         if (deleteResult) {
@@ -76,6 +76,16 @@ class CommunityController(
         } else {
             throw CustomException(ErrorCode.COMMON_INTERNAL_ERROR)
         }
+    }
+
+    @GetMapping("/comments/{postId}/list")
+    fun retrieveComments(@PathVariable postId: UUID, @RequestBody req: TempUserIdRequest): ResponseEntity<DataResponse<RetrieveCommentsResponse>>{
+        val commentList = communityService.retrieveComments(postId)
+        val formattedList = commentList.map {
+            FormattedComment(id = it.id, parentId = it.parentId, authorId = it.authorId, content = it.content, createdAt = it.createdAt, isAuthor = (it.authorId == req.userId))
+        }
+        val responseDto = RetrieveCommentsResponse(comments = formattedList)
+        return ApiResponse.success(responseDto)
     }
 }
 
@@ -141,4 +151,18 @@ data class CreateCommentRequest (
 data class CreateCommentResponse (
     val commentId: UUID,
     val createdAt: LocalDateTime
+)
+
+data class RetrieveCommentsResponse (
+    val comments: List<FormattedComment>
+)
+
+data class FormattedComment (
+    val id: UUID,
+    val parentId: UUID?,
+    val authorId: UUID,
+    val content: String,
+    val createdAt: LocalDateTime,
+    // val author: AuthorInfo, TODO: 유저 정보 추가
+    val isAuthor: Boolean
 )

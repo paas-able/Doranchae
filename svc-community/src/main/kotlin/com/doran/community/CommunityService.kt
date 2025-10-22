@@ -129,4 +129,10 @@ class CommunityService(
             throw CustomException(ErrorCode.COMMON_INTERNAL_ERROR)
         }
     }
+
+    @Transactional
+    fun retrieveComments(postId: UUID): List<Comment>{
+        val post = postRepository.findById(postId).orElseThrow{throw CustomException(ErrorCode.POST_NOT_FOUND)}
+        return commentRepository.findAllByPostOrderByCreatedAtDesc(post)
+    }
 }
