@@ -1,6 +1,9 @@
 package com.doran.community
 
 import com.doran.community.entities.Post
+import com.doran.community.entities.PostLike
+import com.doran.community.entities.PostLikeId
+import com.doran.community.repositories.PostLikeRepository
 import com.doran.community.repositories.PostRepository
 import com.doran.penpal.global.ErrorCode
 import com.doran.penpal.global.exception.CustomException
@@ -10,7 +13,8 @@ import java.util.*
 
 @Service
 class CommunityService(
-    val postRepository: PostRepository
+    val postRepository: PostRepository,
+    val postLikeRepository: PostLikeRepository
 ) {
     @Transactional
     fun createPost(req: CreatePostRequest): Post {
@@ -39,6 +43,47 @@ class CommunityService(
             }
         }
 
+        return postRepository.save(exPost)
+    }
+
+    @Transactional
+    fun likePost(postId: UUID, userId: UUID): Post {
+        val exPost = postRepository.findById(postId).orElseThrow{throw CustomException(ErrorCode.POST_NOT_FOUND)}
+        val exLike = exPost.likes
+
+        // 게시글 좋아요 갱신(+1)
+        exPost.updateLikes(true)
+
+        if (exLike + 1 == exPost.likes) {
+            // PostLike 테이블 갱신
+            val postLikeId = PostLikeId(postId = postId, userId = userId)
+            val newPostLike = PostLike(id = postLikeId, exPost)
+            postLikeRepository.save(newPostLike)
+        } else {
+            throw CustomException(ErrorCode.COMMON_INTERNAL_ERROR)
+        }
+
+        // DB 반영
+        return postRepository.save(exPost)
+    }
+
+    @Transactional
+    fun unlikePost(postId: UUID, userId: UUID): Post {
+        val exPost = postRepository.findById(postId).orElseThrow{throw CustomException(ErrorCode.POST_NOT_FOUND)}
+        val exLike = exPost.likes
+
+        // 게시글 좋아요 갱신(-1)
+        exPost.updateLikes(false)
+
+        if (exLike - 1 == exPost.likes) {
+            // PostLike 테이블 갱신
+            val postLikeId = PostLikeId(postId = postId, userId = userId)
+            postLikeRepository.deleteById(postLikeId)
+        } else {
+            throw CustomException(ErrorCode.COMMON_INTERNAL_ERROR)
+        }
+
+        // DB 반영
         return postRepository.save(exPost)
     }
 }

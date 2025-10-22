@@ -34,6 +34,8 @@ data class Post(
         } else {
             this.likes -= 1
         }
+        this.updatedAt = LocalDateTime.now()
+
         return this
     }
 

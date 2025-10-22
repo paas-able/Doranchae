@@ -7,13 +7,7 @@ import com.doran.penpal.global.exception.CustomException
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
 import org.springframework.http.ResponseEntity
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PatchMapping
-import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 import java.time.LocalDateTime
 import java.util.UUID
 
@@ -31,7 +25,7 @@ class CommunityController(
     }
 
     @PatchMapping("/{postId}/edit")
-    fun editPost(@PathVariable postId: UUID, @Valid @RequestBody req: EditPostRequest): ResponseEntity<DataResponse<EditPostResponse>> {
+    fun editPost(@PathVariable postId: UUID, @Valid @RequestBody req: EditPostRequest): ResponseEntity<DataResponse<PatchResponse>> {
         // editPart 검증
         val editPartFilter = listOf("both", "title", "content")
         if (!editPartFilter.contains(req.editPart)) {
@@ -40,9 +34,19 @@ class CommunityController(
 
         // 수정
         val editResult = communityService.editPost(postId, req)
+        return ApiResponse.success(PatchResponse(updatedAt = editResult.updatedAt))
+    }
 
-        val responseDto= EditPostResponse(updatedAt = editResult.updatedAt)
-        return ApiResponse.success(responseDto)
+    @PatchMapping("/{postId}/like")
+    fun likePost(@PathVariable postId: UUID, @RequestBody req: PostLikeRequest): ResponseEntity<DataResponse<PatchResponse>> {
+        val likeResult = communityService.likePost(postId, req.userId)
+        return ApiResponse.success(PatchResponse(updatedAt = likeResult.updatedAt))
+    }
+
+    @DeleteMapping("/{postId}/like")
+    fun unlikePost(@PathVariable postId: UUID, @RequestBody req: PostLikeRequest): ResponseEntity<DataResponse<PatchResponse>> {
+        val unlikeResult = communityService.unlikePost(postId, req.userId)
+        return ApiResponse.success(PatchResponse(updatedAt = unlikeResult.updatedAt))
     }
 }
 
@@ -68,6 +72,11 @@ data class EditPostRequest (
     val newContent: String?
 )
 
-data class EditPostResponse (
+// TODO: Spring Security 구현시 삭제
+data class PostLikeRequest (
+    val userId: UUID
+)
+
+data class PatchResponse (
     val updatedAt: LocalDateTime
 )
