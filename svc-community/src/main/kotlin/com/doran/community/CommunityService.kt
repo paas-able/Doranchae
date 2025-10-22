@@ -86,4 +86,15 @@ class CommunityService(
         // DB 반영
         return postRepository.save(exPost)
     }
+
+    @Transactional
+    fun retrievePost(postId: UUID): Post {
+        return postRepository.findById(postId).orElseThrow{throw CustomException(ErrorCode.POST_NOT_FOUND)}
+    }
+
+    @Transactional
+    fun retrievePostLike(postId: UUID, userId: UUID): Boolean {
+        val postLikeId = PostLikeId(postId = postId, userId = userId)
+        return postLikeRepository.findById(postLikeId).isEmpty
+    }
 }
