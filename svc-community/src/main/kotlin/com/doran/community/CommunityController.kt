@@ -19,8 +19,7 @@ class CommunityController(
     @PostMapping("/post")
     fun createPost(@Valid @RequestBody req: CreatePostRequest): ResponseEntity<DataResponse<CreatePostResponse>> {
         val newPost = communityService.createPost(req)
-        println(newPost.id)
-        val responseDto = CreatePostResponse(postId = newPost.id, postedAt = newPost.createdAt)
+        val responseDto = CreatePostResponse(postId = newPost.id, createdAt = newPost.createdAt)
         return ApiResponse.success(responseDto)
     }
 
@@ -61,10 +60,12 @@ class CommunityController(
         return ApiResponse.success(responseDto)
     }
 
-    /*@PostMapping("/{postId}/comment")
-    fun createComment(@PathVariable postId: UUID, @RequestBody req: CreateComment) {
-
-    }*/
+    @PostMapping("/{postId}/comment")
+    fun createComment(@PathVariable postId: UUID, @RequestBody req: CreateCommentRequest): ResponseEntity<DataResponse<CreateCommentResponse>> {
+        val newComment = communityService.createComment(postId, req)
+        val responseDto = CreateCommentResponse(commentId = newComment.id, createdAt = newComment.createdAt)
+        return ApiResponse.success(responseDto)
+    }
 }
 
 /* Data Class */
@@ -79,7 +80,7 @@ data class CreatePostRequest (
 
 data class CreatePostResponse (
     val postId: UUID,
-    val postedAt: LocalDateTime
+    val createdAt: LocalDateTime
 )
 
 data class EditPostRequest (
@@ -118,8 +119,15 @@ data class AuthorInfo (
     val name: String
 )
 
-data class CreateComment (
+data class CreateCommentRequest (
+    @field:NotBlank(message = "내용은 필수입니다.")
     val content: String,
     val parentId: UUID?,
+    // TODO: Spring Security 구현 시 삭제
     val authorId: UUID
+)
+
+data class CreateCommentResponse (
+    val commentId: UUID,
+    val createdAt: LocalDateTime
 )

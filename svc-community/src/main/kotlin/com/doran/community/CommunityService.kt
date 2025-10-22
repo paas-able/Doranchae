@@ -1,8 +1,10 @@
 package com.doran.community
 
+import com.doran.community.entities.Comment
 import com.doran.community.entities.Post
 import com.doran.community.entities.PostLike
 import com.doran.community.entities.PostLikeId
+import com.doran.community.repositories.CommentRepository
 import com.doran.community.repositories.PostLikeRepository
 import com.doran.community.repositories.PostRepository
 import com.doran.penpal.global.ErrorCode
@@ -14,7 +16,8 @@ import java.util.*
 @Service
 class CommunityService(
     val postRepository: PostRepository,
-    val postLikeRepository: PostLikeRepository
+    val postLikeRepository: PostLikeRepository,
+    val commentRepository: CommentRepository
 ) {
     @Transactional
     fun createPost(req: CreatePostRequest): Post {
@@ -96,5 +99,17 @@ class CommunityService(
     fun retrievePostLike(postId: UUID, userId: UUID): Boolean {
         val postLikeId = PostLikeId(postId = postId, userId = userId)
         return postLikeRepository.findById(postLikeId).isEmpty
+    }
+
+    @Transactional
+    fun createComment(postId: UUID, req: CreateCommentRequest): Comment {
+        val post = postRepository.findById(postId).orElseThrow{throw CustomException(ErrorCode.POST_NOT_FOUND)}
+
+        if (req.parentId != null) {
+            commentRepository.findById(req.parentId).orElseThrow{throw CustomException(ErrorCode.COMMENT_NOT_FOUND)}
+        }
+
+        val newComment = Comment(parentId = req.parentId, authorId = req.authorId, content = req.content, post = post)
+        return commentRepository.save(newComment)
     }
 }

@@ -17,4 +17,5 @@ enum class ErrorCode(
     POST_ALREADY_EDITED(HttpStatus.BAD_REQUEST, "POST4001", "수정은 1회만 가능합니다"),
     POST_NOT_FOUND(HttpStatus.BAD_REQUEST, "POST4002", "해당 게시글이 존재하지 않습니다"),
     WRONG_EDIT_PART(HttpStatus.BAD_REQUEST, "POST4003", "허용되지 않은 수정 범위입니다."),
+    COMMENT_NOT_FOUND(HttpStatus.BAD_REQUEST, "POST4004", "해당 댓글이 존재하지 않습니다"),
 }
