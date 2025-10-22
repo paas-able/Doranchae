@@ -33,6 +33,14 @@ services:
     ports:
       - "8083:8083"
 
+  chat:
+    build:
+      context: ./svc-chat
+    image: doranlocal/svc-chat:local
+    container_name: doran-chat
+    ports:
+      - "8084:8084"
+
   app:
     build:
       context: ./app
