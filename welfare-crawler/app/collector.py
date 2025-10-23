@@ -7,6 +7,9 @@ import xml.etree.ElementTree as ET
 from urllib.parse import unquote
 from datetime import datetime
 from typing import Dict, List, Tuple, Any
+# DB 연결용 라이브러리
+import mysql.connector
+from mysql.connector import Error
 
 # 기본 필터
 DEFAULT_LIFE_CODES = ["005", "006"]  # 중장년, 노년
@@ -197,7 +200,121 @@ def collect_union(service_key: str,
     detailed.sort(key=sort_key, reverse=True)
     return detailed
 
-# ---------------- 저장 유틸 ----------------
+# ---------------- DB 저장 유틸 ----------------
+def save_to_db(db_host, db_user, db_password, db_name, records: List[Dict]):
+    """
+    수집된 데이터를 MySQL welfare_db에 저장 (UPSERT 방식).
+    """
+    if not records:
+        print("저장할 데이터가 없습니다.")
+        return 0, 0 # 삽입된 수, 업데이트된 수 반환
+
+    connection = None
+    cursor = None
+    inserted_count = 0
+    updated_count = 0
+
+    try:
+        print(f"Connecting to MySQL database: {db_host}/{db_name}")
+        connection = mysql.connector.connect(
+            host=db_host,
+            user=db_user,
+            password=db_password,
+            database=db_name
+        )
+        cursor = connection.cursor()
+        print("MySQL connection successful.")
+
+        # 저장할 컬럼 정의
+        columns = [
+            "servId", "servNm", "jurMnofNm", "tgtrDtlCn", "slctCritCn", "alwServCn",
+            "crtrYr", "rprsCtadr", "wlfareInfoOutlCn", "sprtCycNm", "srvPvsnNm",
+            "lifeArray", "trgterIndvdlArray", "intrsThemaArray",
+            "contact_numbers", "contact_names", "website_urls", "website_names",
+            "form_urls", "form_names", "legal_basis_list", "svcfrstRegTs"
+        ]
+        # SQL 쿼리 생성 (UPSERT: INSERT 시도 후 키 중복 시 UPDATE)
+        cols_str = ", ".join(columns)
+        placeholders = ", ".join([f"%({col})s" for col in columns])
+        update_cols = ", ".join([f"{col}=VALUES({col})" for col in columns if col != "servId"]) # servId는 업데이트 제외
+
+        sql = f"""
+            INSERT INTO welfare_services ({cols_str}, lastUpdateTime)
+            VALUES ({placeholders}, NOW())
+            ON DUPLICATE KEY UPDATE {update_cols}, lastUpdateTime=NOW();
+        """
+
+        processed_records = []
+        for record in records:
+            flat_record = {}
+            flat_record["servId"] = record.get("servId", "")
+            flat_record["servNm"] = record.get("servNm", "")
+            flat_record["jurMnofNm"] = record.get("jurMnofNm", "")
+            flat_record["tgtrDtlCn"] = record.get("tgtrDtlCn", "")
+            flat_record["slctCritCn"] = record.get("slctCritCn", "")
+            flat_record["alwServCn"] = record.get("alwServCn", "")
+            flat_record["crtrYr"] = record.get("crtrYr", "")
+            flat_record["rprsCtadr"] = record.get("rprsCtadr", "")
+            flat_record["wlfareInfoOutlCn"] = record.get("wlfareInfoOutlCn", "")
+            flat_record["sprtCycNm"] = record.get("sprtCycNm", "")
+            flat_record["srvPvsnNm"] = record.get("srvPvsnNm", "")
+            flat_record["lifeArray"] = record.get("lifeArray", "")
+            flat_record["trgterIndvdlArray"] = record.get("trgterIndvdlArray", "")
+            flat_record["intrsThemaArray"] = record.get("intrsThemaArray", "")
+            flat_record["svcfrstRegTs"] = record.get("svcfrstRegTs", "")
+
+            contacts = record.get("contact_info") or []
+            flat_record["contact_numbers"] = "; ".join([c.get("contact_number","") for c in contacts if c.get("contact_number")])
+            flat_record["contact_names"]   = "; ".join([c.get("contact_name","") for c in contacts if c.get("contact_name")])
+            sites = record.get("related_websites") or []
+            flat_record["website_urls"] = "; ".join([s.get("url","") for s in sites if s.get("url")])
+            flat_record["website_names"] = "; ".join([s.get("name","") for s in sites if s.get("name")])
+            forms = record.get("forms_documents") or []
+            flat_record["form_urls"]  = "; ".join([f.get("download_url","") for f in forms if f.get("download_url")])
+            flat_record["form_names"] = "; ".join([f.get("document_name","") for f in forms if f.get("document_name")])
+            laws = record.get("legal_basis") or []
+            flat_record["legal_basis_list"] = "; ".join(laws)
+
+            # None 값을 빈 문자열로 대체
+            for key, value in flat_record.items():
+                if value is None:
+                    flat_record[key] = ""
+
+            processed_records.append(flat_record)
+
+        # 한번에 업데이트
+        cursor.executemany(sql, processed_records)
+
+        connection.commit()
+
+        # 실제 영향 받은 행 수 확인 (정확하지 않을 수 있음, cursor.rowcount는 마지막 실행 결과만 반영)
+        # 좀 더 정확하게 하려면 각 execute 후 rowcount를 누적해야 함
+        affected_rows = cursor.rowcount * len(processed_records) # 대략적인 추정
+        # 실제로는 INSERT(1)와 UPDATE(2)가 섞여 rowcount 만으로는 구분 어려움
+        print(f"DB 저장 완료: 총 {len(records)}건 데이터 처리 시도.")
+        # inserted_count, updated_count 계산 로직은 단순화 (필요 시 추가 구현)
+
+    except Error as e:
+        print(f"DB 저장 중 오류 발생: {e}")
+        if connection:
+            connection.rollback()
+
+    finally:
+        if cursor:
+            cursor.close()
+        if connection and connection.is_connected():
+            connection.close()
+            print("MySQL connection closed.")
+
+    # 실제 삽입/업데이트된 카운트를 반환하는 것은 복잡하므로 단순화
+    return len(records), 0 # 처리 시도 건수만 반환 (정확한 카운트 필요 시 로직 추가)
+
+
+
+
+# 단순 json 저장 코드는 일단 주석처리 -> DB 저장으로 대체
+'''
+# ---------------- 저장 유틸 -------------------
 def save_json(path: str, records: List[Dict], themes: List[str]) -> str:
     export = {
         "metadata": {
@@ -235,3 +352,4 @@ def save_csv(path: str, records: List[Dict]) -> str:
     df = pd.DataFrame(flattened)
     df.to_csv(path, index=False, encoding="utf-8-sig")
     return path
+'''
