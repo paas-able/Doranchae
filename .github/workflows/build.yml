@@ -5,7 +5,7 @@ on:
     branches: [develop, main]
     paths:
       - 'app/**'
-      - 'svc-auth/**'
+      - 'svc-user/**'
       - 'svc-community/**'
       - 'svc-penpal/**'
       - 'svc-welfare/**'
@@ -33,9 +33,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - id: auth
-            context: ./svc-auth
-            image: svc-auth
+          - id: user
+            context: ./svc-user
+            image: svc-user
           - id: community
             context: ./svc-community
             image: svc-community
