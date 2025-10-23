@@ -10,12 +10,13 @@ on:
       - 'svc-penpal/**'
       - 'svc-welfare/**'
       - 'svc-chat/**' 
+      - 'welfare-crawler/**'
       - '.github/workflows/build.yml'
   workflow_dispatch:
 
 permissions:
   contents: read
-  packages: write   # GHCR 푸시에 필요 (Repo Settings > Actions > Workflow permissions: Read and write)
+  packages: write
 
 concurrency:
   group: build-${{ github.ref }}
@@ -51,6 +52,9 @@ jobs:
           - id: app
             context: ./app
             image: app
+          - id: crawler
+            context: ./welfare-crawler
+            image: welfare-crawler
 
     steps:
       - uses: actions/checkout@v4
