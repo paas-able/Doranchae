@@ -11,6 +11,7 @@ import com.doran.user.enums.Gender
 import com.doran.user.enums.InterestOption
 import jakarta.transaction.Transactional
 import org.springframework.stereotype.Service
+import java.util.*
 
 @Service
 class UserService(
@@ -45,6 +46,7 @@ class UserService(
             password = req.password, // TODO: 암호화 코드 추가
             userDetail = newUserDetail,
             userSetting = newUserSetting,
+            nickname = req.nickname
         )
 
         return userRepository.save(newUser)
@@ -60,5 +62,10 @@ class UserService(
         )
 
         return nokRepository.save(newNOK)
+    }
+
+    @Transactional
+    fun retrieveUser(userId: UUID): Optional<User> {
+        return userRepository.findById(userId)
     }
 }

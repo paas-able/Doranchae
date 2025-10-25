@@ -15,6 +15,7 @@ data class User(
     val id: UUID = UUID.randomUUID(),
     val loginId: String,
     val password: String,
+    val nickname: String,
 
     @Embedded
     val userDetail: UserDetails,

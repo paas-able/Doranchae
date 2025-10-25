@@ -9,7 +9,7 @@ import java.util.UUID
 data class NOK(
     @Id
     @Column(columnDefinition = "binary(16)")
-    val id: UUID = UUID.randomUUID(),
+    val id: UUID? = null,
 
     @OneToOne(fetch = FetchType.LAZY)
     @MapsId
