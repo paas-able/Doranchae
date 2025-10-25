@@ -1,9 +1,9 @@
-package com.doran.user.domain
+package com.doran.user.domain.controllers
 import com.doran.penpal.global.ApiResponse
 import com.doran.penpal.global.DataResponse
 import com.doran.penpal.global.ErrorCode
 import com.doran.penpal.global.exception.CustomException
-import com.doran.user.domain.valueObjects.Interests
+import com.doran.user.domain.UserService
 import com.doran.user.enums.InterestOption
 import com.doran.user.utils.annotations.ValidateInterestsCount
 import com.doran.user.utils.annotations.ValidatePassword
@@ -55,10 +55,6 @@ class UserController(
             interests = userInterestList
         )
         return ApiResponse.success(responseDto)
-    }
-
-    private fun getInterestCode(interests: Interests) {
-
     }
 }
 

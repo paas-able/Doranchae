@@ -1,6 +1,6 @@
 package com.doran.user.utils.validators
 
-import com.doran.user.domain.InterestsInput
+import com.doran.user.domain.controllers.InterestsInput
 import com.doran.user.utils.annotations.ValidateInterestsCount
 import jakarta.validation.ConstraintValidator
 import jakarta.validation.ConstraintValidatorContext

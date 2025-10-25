@@ -1,5 +1,7 @@
 package com.doran.user.domain
 
+import com.doran.user.domain.controllers.JoinRequest
+import com.doran.user.domain.controllers.NOKInfo
 import com.doran.user.domain.entities.NOK
 import com.doran.user.domain.entities.User
 import com.doran.user.domain.repositories.NOKRepository
