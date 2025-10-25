@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        service: [svc-auth, svc-community, svc-penpal, svc-welfare]
+        service: [svc-user, svc-community, svc-penpal, svc-welfare]
     steps:
       - uses: actions/checkout@v4
       - uses: gradle/actions/setup-gradle@v3
