@@ -1,11 +1,11 @@
-package com.doran.auth
+package com.doran.user.domain
 
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
 
 @SpringBootApplication
-class SvcAuthApplication
+class SvcUserApplication
 
 fun main(args: Array<String>) {
-	runApplication<SvcAuthApplication>(*args)
+	runApplication<SvcUserApplication>(*args)
 }

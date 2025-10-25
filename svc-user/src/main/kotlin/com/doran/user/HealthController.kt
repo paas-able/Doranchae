@@ -1,4 +1,4 @@
-package com.doran.auth
+package com.doran.user
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RestController
 
