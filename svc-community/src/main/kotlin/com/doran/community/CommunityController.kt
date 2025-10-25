@@ -81,11 +81,27 @@ class CommunityController(
     @GetMapping("/comments/{postId}/list")
     fun retrieveComments(@PathVariable postId: UUID, @RequestBody req: TempUserIdRequest): ResponseEntity<DataResponse<RetrieveCommentsResponse>>{
         val commentList = communityService.retrieveComments(postId)
-        val formattedList = commentList.map {
-            FormattedComment(id = it.id, parentId = it.parentId, authorId = it.authorId, content = it.content, createdAt = it.createdAt, isAuthor = (it.authorId == req.userId))
+
+        val responseDto: RetrieveCommentsResponse = if (commentList.isEmpty()) {
+            RetrieveCommentsResponse(comments = emptyList())
+        } else {
+            val formattedList = commentList.map {
+                FormattedComment(id = it.id, parentId = it.parentId, authorId = it.authorId, content = it.content, createdAt = it.createdAt, isAuthor = (it.authorId == req.userId))
+            }
+            RetrieveCommentsResponse(comments = formattedList)
         }
-        val responseDto = RetrieveCommentsResponse(comments = formattedList)
+
         return ApiResponse.success(responseDto)
+    }
+
+    @DeleteMapping("/post/{postId}")
+    fun deletePost(@Valid @RequestBody req: TempUserIdRequest, @PathVariable postId: UUID): ResponseEntity<BaseResponse> {
+        val deleteResult = communityService.deletePost(postId = postId, userId = req.userId)
+        if (deleteResult) {
+            return ApiResponse.successWithNoData()
+        } else {
+            throw CustomException(ErrorCode.COMMON_INTERNAL_ERROR)
+        }
     }
 }
 
@@ -154,7 +170,7 @@ data class CreateCommentResponse (
 )
 
 data class RetrieveCommentsResponse (
-    val comments: List<FormattedComment>
+    val comments: List<FormattedComment?>
 )
 
 data class FormattedComment (

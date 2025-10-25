@@ -10,4 +10,5 @@ import java.util.UUID
 interface CommentRepository: JpaRepository<Comment, UUID> {
     fun deleteAllByParentId(parentId: UUID)
     fun findAllByPostOrderByCreatedAtDesc(post: Post): List<Comment>
+    fun deleteAllByPost(post: Post)
 }

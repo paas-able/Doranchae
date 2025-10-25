@@ -135,4 +135,21 @@ class CommunityService(
         val post = postRepository.findById(postId).orElseThrow{throw CustomException(ErrorCode.POST_NOT_FOUND)}
         return commentRepository.findAllByPostOrderByCreatedAtDesc(post)
     }
+
+    @Transactional
+    fun deletePost(postId: UUID, userId: UUID): Boolean {
+        val post = postRepository.findById(postId).orElseThrow{throw CustomException(ErrorCode.POST_NOT_FOUND)}
+        if (post.authorId != userId) {
+            throw CustomException(ErrorCode.NOT_YOUR_POST)
+        }
+
+        val deleteCommentsResult = commentRepository.deleteAllByPost(post)
+        val deletePostLikeResult = postLikeRepository.deleteAllByPost(post)
+        val deletePostResult = postRepository.delete(post)
+        if (deleteCommentsResult == Unit && deletePostLikeResult == Unit && deletePostResult == Unit) {
+            return true
+        } else {
+            throw CustomException(ErrorCode.COMMON_INTERNAL_ERROR)
+        }
+    }
 }
