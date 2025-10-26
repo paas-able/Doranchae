@@ -1,4 +1,4 @@
-package com.doran.penpal.global.exception
+package com.doran.welfare.global.exception
 
 import org.springframework.http.ResponseEntity
 import org.springframework.validation.FieldError
