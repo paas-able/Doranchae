@@ -8,4 +8,5 @@ interface ScrapJpaRepository : JpaRepository<ScrapEntity, UUID> {
     fun findByWelfareIdAndUserId(welfareId: UUID, userId: String): ScrapEntity?
     fun deleteByWelfareIdAndUserId(welfareId: UUID, userId: String)
     fun findByUserId(userId: String): List<ScrapEntity>
+    fun findByWelfareId(welfareId: UUID): List<ScrapEntity>
 }

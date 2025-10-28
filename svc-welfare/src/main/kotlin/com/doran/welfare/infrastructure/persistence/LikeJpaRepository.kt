@@ -8,4 +8,5 @@ interface LikeJpaRepository : JpaRepository<LikeEntity, UUID> {
     fun findByWelfareIdAndUserId(welfareId: UUID, userId: String): LikeEntity?
     fun deleteByWelfareIdAndUserId(welfareId: UUID, userId: String)
     fun findByUserId(userId: String): List<LikeEntity>
+    fun findByWelfareId(welfareId: UUID): List<LikeEntity>
 }

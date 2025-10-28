@@ -58,7 +58,7 @@ class WelfareController(
     fun addLike(
         @PathVariable id: UUID,
         @RequestParam userId: String
-    ): ResponseEntity<DataResponse<String>> {  // ← DataResponse 사용
+    ): ResponseEntity<DataResponse<String>> {
         welfareService.addLike(id, userId)
         return ApiResponse.success("좋아요 추가됨")
     }
