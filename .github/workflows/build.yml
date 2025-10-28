@@ -1,8 +1,8 @@
-name: build-and-push
+name: build-push-and-update-manifest
 
 on:
   push:
-    branches: [develop, main]
+    branches: main
     paths:
       - 'app/**'
       - 'svc-user/**'
@@ -24,12 +24,12 @@ concurrency:
 
 env:
   REGISTRY: ghcr.io
+  MANIFEST_REPOSITORY: paas-able/doranchae-manifests
+  MANIFEST_BRANCH: main
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
-    # 5개 서비스 공통 로직을 matrix로 처리
     strategy:
       fail-fast: false
       matrix:
@@ -37,33 +37,38 @@ jobs:
           - id: user
             context: ./svc-user
             image: svc-user
+            manifest_path: apps/svc-user/deployment.yaml
           - id: community
             context: ./svc-community
             image: svc-community
+            manifest_path: apps/svc-community/deployment.yaml
           - id: penpal
             context: ./svc-penpal
             image: svc-penpal
+            manifest_path: apps/svc-penpal/deployment.yaml
           - id: welfare
             context: ./svc-welfare
             image: svc-welfare
+            manifest_path: apps/svc-welfare/deployment.yaml
           - id: chat
             context: ./svc-chat
             image: svc-chat
+            manifest_path: apps/svc-chat/deployment.yaml
           - id: app
             context: ./app
             image: app
+            manifest_path: apps/app-frontend/deployment.yaml
           - id: crawler
             context: ./welfare-crawler
             image: welfare-crawler
+            manifest_path: apps/welfare-crawler/deployment.yaml
 
     steps:
       - uses: actions/checkout@v4
 
-      # owner/repo 를 소문자로 (GHCR 경로는 소문자 권장)
       - name: Compute image namespace
         run: echo "IMAGE_NS=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
 
-      # 브랜치별 latest 태그 결정 (main → main-latest / 그 외 → dev-latest)
       - name: Set branch latest tag
         run: |
           if [ "${GITHUB_REF_NAME}" = "main" ]; then
@@ -81,9 +86,6 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-        # 만약 조직 정책으로 GITHUB_TOKEN 푸시가 막히면, Repo Secrets에 GHCR_PAT(classic, write:packages) 추가 후:
-        # username: ${{ github.repository_owner }}
-        # password: ${{ secrets.GHCR_PAT }}
 
       - name: Build & Push (${{ matrix.id }})
         uses: docker/build-push-action@v5
@@ -91,7 +93,6 @@ jobs:
           context: ${{ matrix.context }}
           file: ${{ matrix.context }}/Dockerfile
           push: true
-          # 필요하면 플랫폼 다중 빌드도 가능: platforms: linux/amd64,linux/arm64
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_NS }}/${{ matrix.image }}:${{ github.sha }}
             ${{ env.REGISTRY }}/${{ env.IMAGE_NS }}/${{ matrix.image }}:${{ env.LATEST_TAG }}
@@ -99,3 +100,89 @@ jobs:
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
             org.opencontainers.image.ref.name=${{ github.ref_name }}
+
+  # --- 매니페스트 업데이트 작업 ---
+  update-manifests:
+    needs: build # 'build' 작업이 성공해야만 실행됩니다.
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' 
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - id: user
+            image: svc-user
+            manifest_path: apps/svc-user/deployment.yaml
+          - id: community
+            image: svc-community
+            manifest_path: apps/svc-community/deployment.yaml
+          - id: penpal
+            image: svc-penpal
+            manifest_path: apps/svc-penpal/deployment.yaml
+          - id: welfare
+            image: svc-welfare
+            manifest_path: apps/svc-welfare/deployment.yaml
+          - id: chat
+            image: svc-chat
+            manifest_path: apps/svc-chat/deployment.yaml
+          - id: app
+            image: app
+            manifest_path: apps/app-frontend/deployment.yaml
+          - id: crawler
+            image: welfare-crawler
+            manifest_path: apps/welfare-crawler/deployment.yaml
+
+    steps:
+      # 1. 'doranchae-manifests' 레포지토리를 체크아웃합니다.
+      - name: Checkout manifests repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.MANIFEST_REPOSITORY }}
+          token: ${{ secrets.REPO_ACCESS_TOKEN }}
+          ref: ${{ env.MANIFEST_BRANCH }}
+
+      # 2. 'build' 작업과 동일하게 이미지 네임스페이스 계산
+      - name: Compute image namespace
+        run: echo "IMAGE_NS=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+
+      # 3. 'sed' 명령어로 deployment.yaml 파일의 이미지 태그를 교체합니다.
+      - name: Update image tag in deployment.yaml
+        run: |
+          # 기본 이미지 이름 (예: ghcr.io/paas-able/doranchae/app)
+          IMAGE_BASE_NAME="${{ env.REGISTRY }}/${{ env.IMAGE_NS }}/${{ matrix.image }}"
+          
+          # 새 이미지 태그 (예: ghcr.io/paas-able/doranchae/app:a1b2c3d...)
+          NEW_IMAGE_WITH_TAG="${IMAGE_BASE_NAME}:${{ github.sha }}"
+          
+          # 수정할 파일 경로 (예: apps/app-frontend/deployment.yaml)
+          FILE_TO_UPDATE="${{ matrix.manifest_path }}"
+          
+          echo "Updating ${FILE_TO_UPDATE}..."
+          echo "Setting image to: ${NEW_IMAGE_WITH_TAG}"
+          
+          # 'sed'를 사용해 'image: [기본 이미지 이름]:[아무 태그]'를 'image: [새 이미지 태그]'로 교체
+          # (구분자로 |를 사용)
+          sed -i.bak "s|image: ${IMAGE_BASE_NAME}:.*|image: ${NEW_IMAGE_WITH_TAG}|g" ${FILE_TO_UPDATE}
+          
+          echo "--- Diff ---"
+          cat ${FILE_TO_UPDATE}.bak || echo "No backup file created."
+          echo "------------"
+          cat ${FILE_TO_UPDATE}
+          echo "------------"
+
+      # 4. 변경 사항을 Git에 커밋하고 푸시합니다.
+      - name: Commit and push changes
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          
+          git add .
+          
+          # 변경 사항이 있을 때만 커밋
+          if git diff --staged --quiet; then
+            echo "No changes to commit for ${{ matrix.id }}."
+          else
+            git commit -m "Update image for ${{ matrix.id }} to ${{ github.sha }}"
+            git push
+          fi
