@@ -1,7 +1,5 @@
 package com.doran.chat.controller
 
-import com.doran.chat.domain.ChatRoom
-import com.doran.chat.domain.UserChat
 import com.doran.chat.service.ChatService
 import com.doran.chat.global.ApiResponse
 import com.doran.chat.global.BaseResponse
@@ -12,6 +10,7 @@ import org.springframework.data.domain.Sort
 import org.springframework.data.web.PageableDefault
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
+import java.time.LocalDateTime
 import java.util.*
 
 @RestController
@@ -26,14 +25,22 @@ class ChatRestController(
     }
 
     @GetMapping("/room/messages")
-    fun getMessages(@RequestBody request: GetMessagesRequest): ResponseEntity<DataResponse<List<UserChat>>> {
-        return ApiResponse.success(chatService.getMessages(request.chatRoomId));
+    fun getMessages(
+        @RequestBody request: GetMessagesRequest,
+        @PageableDefault(size = 20, sort = ["sentAt"], direction = Sort.Direction.DESC)
+        pageable: Pageable
+    ): ResponseEntity<DataResponse<MessageListResponse>> {
+
+        val responseDto = chatService.getMessages(request.chatRoomId, request.userId, pageable)
+        return ApiResponse.success(responseDto)
     }
+
     @GetMapping("/list")
     fun getChatRoomList(@RequestBody request: GetUserChatRoomsRequest,
                         @PageableDefault(size = 10, sort = ["lastMessageAt"], direction = Sort.Direction.DESC)
-                        pageable: Pageable): ResponseEntity<DataResponse<Page<ChatRoom>>> {
-        return ApiResponse.success(chatService.getChatRoomList(request.userId, pageable))
+                        pageable: Pageable): ResponseEntity<DataResponse<ChatRoomListResponse>> {
+        val responseDto = chatService.getChatRoomList(request.userId, pageable)
+        return ApiResponse.success(responseDto)
     }
 
     @PostMapping("/end")
@@ -50,9 +57,43 @@ data class CreateChatRoomRequest(
 )
 
 data class GetMessagesRequest(
-    val chatRoomId: UUID
+    val chatRoomId: UUID,
+    val userId: UUID
 )
 
 data class GetUserChatRoomsRequest(
     val userId : UUID
+)
+
+data class PageInfo (
+    var isFirst: Boolean,
+    var isLast: Boolean,
+    var currentPage: Int,
+    var totalPages: Int
+)
+
+data class ChatRoomInfo (
+    val id: UUID,
+    val opponentId: UUID?
+)
+
+data class ChatRoomListResponse (
+    val chatRooms: List<ChatRoomInfo>,
+    val page: PageInfo
+)
+
+fun <T> createPageInfo(info: Page<T>): PageInfo {
+    return PageInfo(isFirst = info.isFirst, isLast = info.isLast, currentPage = info.number, totalPages = info.totalPages)
+}
+
+data class MessageInfo (
+    val id: UUID,
+    val content: String,
+    val sentAt: LocalDateTime,
+    val isFromUser: Boolean
+)
+
+data class MessageListResponse (
+    val messages: List<MessageInfo>,
+    val page: PageInfo
 )

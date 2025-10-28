@@ -1,5 +1,6 @@
 package com.doran.chat.service
 
+import com.doran.chat.controller.*
 import com.doran.chat.domain.ChatRoom
 import com.doran.chat.domain.UserChat
 import com.doran.chat.repository.ChatRoomRepository
@@ -48,20 +49,49 @@ class ChatService(
         return userChatRepository.save(chat)
     }
 
-    fun getChatRoomList(userId: UUID, pageable: Pageable): Page<ChatRoom> {
-        return chatRoomRepository.findByParticipantIdsContainingAndStatus(userId,ChatRoom.ChatStatus.ACTIVATE,pageable)
+    fun getChatRoomList(userId: UUID, pageable: Pageable): ChatRoomListResponse {
+        val chatRoomPage: Page<ChatRoom> = chatRoomRepository.findByParticipantIdsContainingAndStatus(
+            userId,
+            ChatRoom.ChatStatus.ACTIVATE,
+            pageable
+        )
+
+        val pageInfo = createPageInfo(chatRoomPage)
+
+        val chatRoomInfos: List<ChatRoomInfo> = chatRoomPage.content.map { chatRoom ->
+            val opponentId = chatRoom.participantIds.firstOrNull { it != userId }
+
+            ChatRoomInfo(
+                id = chatRoom.id,
+                opponentId = opponentId
+            )
+        }
+
+        return ChatRoomListResponse(chatRooms = chatRoomInfos, page = pageInfo)
     }
 
 
-    fun getMessages(chatRoomId: UUID): List<UserChat> {
-        val chatRoom =chatRoomRepository.findById(chatRoomId)
+    fun getMessages(chatRoomId: UUID, userId: UUID, pageable: Pageable): MessageListResponse {
+        val chatRoom = chatRoomRepository.findById(chatRoomId)
             .orElseThrow { CustomException(ErrorCode.CHAT_ROOM_NOT_FOUND) }
 
         if (chatRoom.status == ChatRoom.ChatStatus.INACVTIVATE)
             throw CustomException(ErrorCode.CHAT_ROOM_INACTIVATED)
 
-        return userChatRepository.findByChatRoomIdOrderBySentAtAsc(chatRoomId)
+        val messagePage: Page<UserChat> = userChatRepository.findByChatRoomId(chatRoomId, pageable)
 
+        val pageInfo = createPageInfo(messagePage)
+
+        val messageInfos: List<MessageInfo> = messagePage.content.map { chat ->
+            MessageInfo(
+                id = chat.id,
+                content = chat.content,
+                sentAt = chat.sentAt,
+                isFromUser = (chat.senderId == userId)
+            )
+        }
+
+        return MessageListResponse(messages = messageInfos, page = pageInfo)
     }
 
     fun endChatRoom(chatRoomId: UUID): ChatRoom {
