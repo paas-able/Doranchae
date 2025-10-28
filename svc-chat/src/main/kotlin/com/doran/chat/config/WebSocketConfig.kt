@@ -24,7 +24,6 @@ class WebSocketConfig : WebSocketMessageBrokerConfigurer {
 
     override fun configureMessageBroker(registry: MessageBrokerRegistry) {
         registry.enableSimpleBroker("/topic")
-            // 하트비트를 위해 주입받은 스케줄러를 다시 설정합니다.
             .setTaskScheduler(taskScheduler)
             .setHeartbeatValue(longArrayOf(10_000, 20_000))
 
