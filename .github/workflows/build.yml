@@ -61,7 +61,7 @@ jobs:
           - id: crawler
             context: ./welfare-crawler
             image: welfare-crawler
-            manifest_path: apps/welfare-crawler/deployment.yaml
+            manifest_path: apps/welfare-crawler/cronjob.yaml
 
     steps:
       - uses: actions/checkout@v4
@@ -131,7 +131,7 @@ jobs:
             manifest_path: apps/app-frontend/deployment.yaml
           - id: crawler
             image: welfare-crawler
-            manifest_path: apps/welfare-crawler/deployment.yaml
+            manifest_path: apps/welfare-crawler/cronjob.yaml
 
     steps:
       # 1. 'doranchae-manifests' 레포지토리를 체크아웃합니다.
@@ -186,5 +186,12 @@ jobs:
             echo "No changes to commit for ${{ matrix.id }}."
           else
             git commit -m "Update image for ${{ matrix.id }} to ${{ github.sha }}"
+            
+            # ⚠️ FIX: 푸시 직전에 다른 변경사항을 rebase로 가져와 충돌을 해결합니다.
+            echo "Pulling latest changes with rebase..."
+            git pull --rebase origin ${{ env.MANIFEST_BRANCH }}
+            
+            echo "Pushing changes..."
             git push
           fi
+
