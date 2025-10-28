@@ -139,7 +139,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: ${{ env.MANIFEST_REPOSITORY }}
-          token: ${{ secrets.REPO_ACCESS_TOKEN }}
+          token: ${{ secrets.JIN_REPO_ACCESS_TOKEN }}
           ref: ${{ env.MANIFEST_BRANCH }}
 
       # 2. 'build' 작업과 동일하게 이미지 네임스페이스 계산
