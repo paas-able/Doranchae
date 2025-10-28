@@ -1,355 +1,273 @@
-# app/collector.py
-# -*- coding: utf-8 -*-
-import os, time, json
+# collector.py (최종 버전)
+
 import requests
-import pandas as pd
-import xml.etree.ElementTree as ET
-from urllib.parse import unquote
+import json
+import time
+from uuid import uuid4
 from datetime import datetime
-from typing import Dict, List, Tuple, Any
-# DB 연결용 라이브러리
+import xml.etree.ElementTree as ET
 import mysql.connector
-from mysql.connector import Error
+from mysql.connector import errorcode
 
-# 기본 필터
-DEFAULT_LIFE_CODES = ["005", "006"]  # 중장년, 노년
-DEFAULT_THEME_CODES = ["010","020","030","040","060","070","100","120","130"]
 
-def ensure_decoded_key(key: str) -> str:
-    return unquote(key or "")
+# init.py에서 환경 변수 기반 설정 및 상수 가져오기
+from init import (
+    API_KEY,
+    DEFAULT_LIFE, 
+    DEFAULT_THEMES, 
+    DB_COLUMNS,
+    DB_CONFIG, 
+    CREATE_TABLE_SQL
+)
 
-def make_endpoints(use_https: bool) -> Tuple[str, str]:
-    scheme = "https" if use_https else "http"
-    base = f"{scheme}://apis.data.go.kr/B554287/NationalWelfareInformationsV001"
-    return f"{base}/NationalWelfarelistV001", f"{base}/NationalWelfaredetailedV001"
+MAX_RETRIES = 3      # 최대 재시도 횟수
+RETRY_DELAY_SEC = 10  # 재시도 간 대기 시간 (초)
+LIST_API_URL = "https://apis.data.go.kr/B554287/LocalGovernmentWelfareInformations/LcgvWelfarelist"
+DETAIL_API_URL = "https://apis.data.go.kr/B554287/LocalGovernmentWelfareInformations/LcgvWelfaredetailed"
 
-# ---------------- XML 파서 ----------------
-def parse_list_xml(text: str) -> Dict:
-    root = ET.fromstring(text)
-    def g(tag):
-        e = root.find(f".//{tag}")
-        return e.text.strip() if e is not None and e.text else None
-    result = {"resultCode": g("resultCode"), "resultMessage": g("resultMessage"),
-              "totalCount": 0, "items": []}
-    tc = g("totalCount")
-    if tc and tc.isdigit():
-        result["totalCount"] = int(tc)
-    for serv in root.findall(".//servList"):
-        rec = {}
-        for ch in list(serv):
-            tag = ch.tag.split("}")[-1]
-            rec[tag] = (ch.text or "").strip()
-        result["items"].append(rec)
-    return result
+class WelfareCollector:
+    def __init__(self):
+        self.preview_data = []
+        self.max_preview = 3
+        self.db_connection = None
+        self.is_db_connected = False
 
-def parse_detail_xml(text: str) -> Dict:
-    root = ET.fromstring(text)
-    def g(tag):
-        e = root.find(f".//{tag}")
-        return e.text.strip() if e is not None and e.text else ""
-    detail = {}
-    for tag in ["servId","servNm","jurMnofNm","tgtrDtlCn","slctCritCn","alwServCn",
-                "crtrYr","rprsCtadr","wlfareInfoOutlCn","sprtCycNm","srvPvsnNm",
-                "lifeArray","trgterIndvdlArray","intrsThemaArray"]:
-        detail[tag] = g(tag)
-    # 문의처
-    contacts = []
-    for node in root.findall(".//inqplCtadrList"):
-        contacts.append({
-            "contact_number": (node.findtext("servSeDetailLink") or "").strip(),
-            "contact_name":   (node.findtext("servSeDetailNm") or "").strip(),
-        })
-    detail["contact_info"] = contacts
-    # 관련 홈페이지
-    sites = []
-    for node in root.findall(".//inqplHmpgReldList"):
-        sites.append({
-            "url":  (node.findtext("servSeDetailLink") or "").strip(),
-            "name": (node.findtext("servSeDetailNm") or "").strip(),
-        })
-    detail["related_websites"] = sites
-    # 서식/자료
-    forms = []
-    for node in root.findall(".//basfrmList"):
-        forms.append({
-            "download_url": (node.findtext("servSeDetailLink") or "").strip(),
-            "document_name":(node.findtext("servSeDetailNm") or "").strip(),
-        })
-    detail["forms_documents"] = forms
-    # 근거법령
-    laws = []
-    for node in root.findall(".//baslawList"):
-        nm = (node.findtext("servSeDetailNm") or "").strip()
-        if nm:
-            laws.append(nm)
-    detail["legal_basis"] = laws
-    detail["resultCode"] = (root.findtext(".//resultCode") or "").strip()
-    detail["resultMessage"] = (root.findtext(".//resultMessage") or "").strip()
-    return detail
-
-# ---------------- 안전 병합 ----------------
-def _is_meaningful(v: Any) -> bool:
-    if v is None: return False
-    if isinstance(v, str): return v.strip() != ""
-    if isinstance(v, (list, dict, tuple, set)): return len(v) > 0
-    return True
-
-def smart_merge(base: Dict, overlay: Dict) -> Dict:
-    out = dict(base)
-    for k, v in overlay.items():
-        if _is_meaningful(v):
-            out[k] = v
-    return out
-
-# ---------------- API 호출 ----------------
-def fetch_list(session: requests.Session, list_ep: str, service_key: str,
-               life_code: str, page: int, rows: int, order_by: str,
-               theme_codes: List[str], timeout: int = 15, debug: bool = False) -> Dict:
-    params = {
-        "serviceKey": service_key,
-        "callTp": "L",
-        "srchKeyCode": "003",
-        "pageNo": page,
-        "numOfRows": rows,
-        "lifeArray": life_code,
-        "orderBy": order_by
-    }
-    if theme_codes:
-        params["intrsThemaArray"] = ",".join(theme_codes)
-    r = session.get(list_ep, params=params, timeout=timeout)
-    if debug and page == 1:
-        print("[debug] list url:", r.url)
-    r.raise_for_status()
-    return parse_list_xml(r.text)
-
-def fetch_detail(session: requests.Session, detail_ep: str, service_key: str, serv_id: str,
-                 timeout: int = 20) -> Dict:
-    params = {"serviceKey": service_key, "callTp": "D", "servId": serv_id}
-    r = session.get(detail_ep, params=params, timeout=timeout)
-    r.raise_for_status()
-    return parse_detail_xml(r.text)
-
-# ---------------- 수집 파이프라인(함수) ----------------
-def collect_union(service_key: str,
-                  life_codes: List[str] = None,
-                  theme_codes: List[str] = None,
-                  pages: int = 2, rows: int = 100,
-                  order_by: str = "date",
-                  delay: float = 0.25,
-                  https: bool = False,
-                  debug: bool = False) -> List[Dict]:
-    life_codes = life_codes or DEFAULT_LIFE_CODES
-    theme_codes = theme_codes or DEFAULT_THEME_CODES
-    list_ep, detail_ep = make_endpoints(https)
-    session = requests.Session()
-
-    # 연결 테스트(간단 검증)
-    test_params = {"serviceKey": service_key, "callTp": "L", "srchKeyCode": "003",
-                   "pageNo": 1, "numOfRows": 5, "lifeArray": "006", "orderBy": "date"}
-    if theme_codes:
-        test_params["intrsThemaArray"] = ",".join(theme_codes)
-    r = requests.get(list_ep, params=test_params, timeout=15)
-    r.raise_for_status()
-    try:
-        parsed = ET.fromstring(r.text)
-        rc = (parsed.findtext(".//resultCode") or "").strip()
-        if rc not in ("", "0"):
-            raise RuntimeError(f"Connectivity failed: resultCode={rc}")
-    except ET.ParseError:
-        raise RuntimeError("Connectivity failed: invalid XML")
-
-    # 목록 합집합
-    seen, pooled = set(), []
-    for life in life_codes:
-        for page in range(1, pages + 1):
-            res = fetch_list(session, list_ep, service_key, life, page, rows, order_by, theme_codes, debug=debug)
-            items = res.get("items") or []
-            if not items:
-                break
-            for it in items:
-                sid = it.get("servId")
-                if sid and sid not in seen:
-                    seen.add(sid)
-                    pooled.append(it)
-            if len(items) < rows:
-                break
-            time.sleep(delay)
-
-    if not pooled:
-        return []
-
-    # 상세 병합
-    detailed = []
-    for it in pooled:
-        sid = it.get("servId")
+    def _connect_db(self):
+        """MySQL DB 연결 및 테이블 존재 확인"""
         try:
-            det = fetch_detail(session, detail_ep, service_key, sid)
-            merged = smart_merge(it, det)
-        except Exception:
-            merged = dict(it)  # 상세 실패 시 목록만 유지
-        detailed.append(merged)
-        time.sleep(delay)
-
-    # 최신 정렬
-    def sort_key(rec: Dict):
-        reg = rec.get("svcfrstRegTs") or ""
-        try:
-            return datetime.strptime(reg, "%Y%m%d")
-        except:
-            return datetime.min
-    detailed.sort(key=sort_key, reverse=True)
-    return detailed
-
-# ---------------- DB 저장 유틸 ----------------
-def save_to_db(db_host, db_user, db_password, db_name, records: List[Dict]):
-    """
-    수집된 데이터를 MySQL welfare_db에 저장 (UPSERT 방식).
-    """
-    if not records:
-        print("저장할 데이터가 없습니다.")
-        return 0, 0 # 삽입된 수, 업데이트된 수 반환
-
-    connection = None
-    cursor = None
-    inserted_count = 0
-    updated_count = 0
-
-    try:
-        print(f"Connecting to MySQL database: {db_host}/{db_name}")
-        connection = mysql.connector.connect(
-            host=db_host,
-            user=db_user,
-            password=db_password,
-            database=db_name
-        )
-        cursor = connection.cursor()
-        print("MySQL connection successful.")
-
-        # 저장할 컬럼 정의
-        columns = [
-            "servId", "servNm", "jurMnofNm", "tgtrDtlCn", "slctCritCn", "alwServCn",
-            "crtrYr", "rprsCtadr", "wlfareInfoOutlCn", "sprtCycNm", "srvPvsnNm",
-            "lifeArray", "trgterIndvdlArray", "intrsThemaArray",
-            "contact_numbers", "contact_names", "website_urls", "website_names",
-            "form_urls", "form_names", "legal_basis_list", "svcfrstRegTs"
-        ]
-        # SQL 쿼리 생성 (UPSERT: INSERT 시도 후 키 중복 시 UPDATE)
-        cols_str = ", ".join(columns)
-        placeholders = ", ".join([f"%({col})s" for col in columns])
-        update_cols = ", ".join([f"{col}=VALUES({col})" for col in columns if col != "servId"]) # servId는 업데이트 제외
-
-        sql = f"""
-            INSERT INTO welfare_services ({cols_str}, lastUpdateTime)
-            VALUES ({placeholders}, NOW())
-            ON DUPLICATE KEY UPDATE {update_cols}, lastUpdateTime=NOW();
-        """
-
-        processed_records = []
-        for record in records:
-            flat_record = {}
-            flat_record["servId"] = record.get("servId", "")
-            flat_record["servNm"] = record.get("servNm", "")
-            flat_record["jurMnofNm"] = record.get("jurMnofNm", "")
-            flat_record["tgtrDtlCn"] = record.get("tgtrDtlCn", "")
-            flat_record["slctCritCn"] = record.get("slctCritCn", "")
-            flat_record["alwServCn"] = record.get("alwServCn", "")
-            flat_record["crtrYr"] = record.get("crtrYr", "")
-            flat_record["rprsCtadr"] = record.get("rprsCtadr", "")
-            flat_record["wlfareInfoOutlCn"] = record.get("wlfareInfoOutlCn", "")
-            flat_record["sprtCycNm"] = record.get("sprtCycNm", "")
-            flat_record["srvPvsnNm"] = record.get("srvPvsnNm", "")
-            flat_record["lifeArray"] = record.get("lifeArray", "")
-            flat_record["trgterIndvdlArray"] = record.get("trgterIndvdlArray", "")
-            flat_record["intrsThemaArray"] = record.get("intrsThemaArray", "")
-            flat_record["svcfrstRegTs"] = record.get("svcfrstRegTs", "")
-
-            contacts = record.get("contact_info") or []
-            flat_record["contact_numbers"] = "; ".join([c.get("contact_number","") for c in contacts if c.get("contact_number")])
-            flat_record["contact_names"]   = "; ".join([c.get("contact_name","") for c in contacts if c.get("contact_name")])
-            sites = record.get("related_websites") or []
-            flat_record["website_urls"] = "; ".join([s.get("url","") for s in sites if s.get("url")])
-            flat_record["website_names"] = "; ".join([s.get("name","") for s in sites if s.get("name")])
-            forms = record.get("forms_documents") or []
-            flat_record["form_urls"]  = "; ".join([f.get("download_url","") for f in forms if f.get("download_url")])
-            flat_record["form_names"] = "; ".join([f.get("document_name","") for f in forms if f.get("document_name")])
-            laws = record.get("legal_basis") or []
-            flat_record["legal_basis_list"] = "; ".join(laws)
-
-            # None 값을 빈 문자열로 대체
-            for key, value in flat_record.items():
-                if value is None:
-                    flat_record[key] = ""
-
-            processed_records.append(flat_record)
-
-        # 한번에 업데이트
-        cursor.executemany(sql, processed_records)
-
-        connection.commit()
-
-        # 실제 영향 받은 행 수 확인 (정확하지 않을 수 있음, cursor.rowcount는 마지막 실행 결과만 반영)
-        # 좀 더 정확하게 하려면 각 execute 후 rowcount를 누적해야 함
-        affected_rows = cursor.rowcount * len(processed_records) # 대략적인 추정
-        # 실제로는 INSERT(1)와 UPDATE(2)가 섞여 rowcount 만으로는 구분 어려움
-        print(f"DB 저장 완료: 총 {len(records)}건 데이터 처리 시도.")
-        # inserted_count, updated_count 계산 로직은 단순화 (필요 시 추가 구현)
-
-    except Error as e:
-        print(f"DB 저장 중 오류 발생: {e}")
-        if connection:
-            connection.rollback()
-
-    finally:
-        if cursor:
+            conn = mysql.connector.connect(**DB_CONFIG)
+            cursor = conn.cursor()
+            cursor.execute(CREATE_TABLE_SQL)
+            conn.commit()
             cursor.close()
-        if connection and connection.is_connected():
-            connection.close()
-            print("MySQL connection closed.")
+            print("INFO: DB 연결 및 'welfare' 테이블 확인 완료.")
+            return conn, True
+        except mysql.connector.Error as err:
+            print(f"WARN: DB 연결 실패 (로컬 환경이거나 설정 오류): {err}")
+            return None, False
+        except Exception as e:
+            print(f"WARN: DB 연결 중 기타 오류 발생: {e}")
+            return None, False
 
-    # 실제 삽입/업데이트된 카운트를 반환하는 것은 복잡하므로 단순화
-    return len(records), 0 # 처리 시도 건수만 반환 (정확한 카운트 필요 시 로직 추가)
+    def _insert_to_db(self, insert_tuple):
+        """변환된 데이터를 DB에 삽입 (업데이트 시도 포함)"""
+        if not self.is_db_connected:
+            return 0
+        
+        insert_sql = """
+        INSERT INTO welfare (
+            id, title, content, organization, region, local_upload_date, 
+            start_date, end_date, provider, source_url
+        ) VALUES (
+            %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+        ) ON DUPLICATE KEY UPDATE 
+            title=VALUES(title), content=VALUES(content), organization=VALUES(organization),
+            region=VALUES(region), local_upload_date=VALUES(local_upload_date),
+            start_date=VALUES(start_date), end_date=VALUES(end_date), 
+            provider=VALUES(provider), source_url=VALUES(source_url)
+        """
+        
+        cursor = self.db_connection.cursor()
+        try:
+            insert_data = (bytes.fromhex(insert_tuple[0]),) + insert_tuple[1:]
+            
+            cursor.execute(insert_sql, insert_data)
+            self.db_connection.commit()
+            return 1
+        except mysql.connector.Error as err:
+            print(f"ERROR: DB 삽입 오류 (ID: {insert_tuple[0][:8]}...): {err}")
+            self.db_connection.rollback()
+            return 0
+        finally:
+            cursor.close()
 
+    def close(self):
+        """DB 연결 해제"""
+        if self.db_connection and self.is_db_connected:
+            self.db_connection.close()
+            print("INFO: DB 연결 해제.")
 
+    def _api_request(self, url, params):
+        """API 요청 공통 함수 (재시도 및 지연 로직 포함)"""
+        if API_KEY == "TEST_API_KEY_REQUIRED":
+            print("ERROR: API 키가 설정되지 않았습니다. 환경 변수 WELFARE_API_KEY를 설정하세요.")
+            return None
+        
+        for attempt in range(MAX_RETRIES):
+            try:
+                response = requests.get(url, params=params, timeout=10)
+                response.raise_for_status() 
+                
+                root = ET.fromstring(response.text)
+                
+                result_code = root.findtext('resultCode')
+                result_message = root.findtext('resultMessage')
+                
+                if result_code in ["0", "00"]:
+                    return root
+                
+                print(f"WARN: API 서버 오류 발생. 코드: {result_code}, 메시지: {result_message} (시도 {attempt + 1}/{MAX_RETRIES})")
+                
+            except requests.exceptions.RequestException as e:
+                print(f"WARN: API 요청 오류 발생: {e} (시도 {attempt + 1}/{MAX_RETRIES})")
+            except ET.ParseError:
+                error_text = response.text if 'response' in locals() else "Unknown response"
+                print(f"WARN: XML 파싱 오류. 서버 응답이 유효하지 않음. (시도 {attempt + 1}/{MAX_RETRIES})")
+            
+            if attempt < MAX_RETRIES - 1:
+                print(f"INFO: {RETRY_DELAY_SEC}초 대기 후 재시도합니다.")
+                time.sleep(RETRY_DELAY_SEC)
+            
+        print(f"ERROR: API 요청 최종 실패. URL: {url}")
+        return None
+    
+    def _get_serv_id_list(self):
+        """목록조회 API를 통해 모든 servId를 수집 (DB 연결 시 전체 로딩)"""
+        serv_ids = []
+        pageNo = 1
+        
+        numOfRows = 10 if not self.is_db_connected else 100 
+        total_pages = 1 
 
+        print(f"INFO: 서비스 ID 목록 수집 시작 ({'전체 목록' if self.is_db_connected else '로컬 확인용 1페이지'} 로드)...")
 
-# 단순 json 저장 코드는 일단 주석처리 -> DB 저장으로 대체
-'''
-# ---------------- 저장 유틸 -------------------
-def save_json(path: str, records: List[Dict], themes: List[str]) -> str:
-    export = {
-        "metadata": {
-            "collection_date": datetime.now().isoformat(),
-            "total_services": len(records),
-            "description": "중장년(005)+노년(006) 관심주제 최신순(빈값 안전 병합)",
-            "themes": themes,
-        },
-        "services": records,
-    }
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(export, f, ensure_ascii=False, indent=2)
-    return path
+        while pageNo <= total_pages: 
+            params = {
+                "serviceKey": API_KEY,
+                "pageNo": pageNo,
+                "numOfRows": numOfRows,
+                "lifeArray": DEFAULT_LIFE,
+                "intrsThemaArray": DEFAULT_THEMES,
+            }
+            
+            root = self._api_request(LIST_API_URL, params)
+            
+            if root is not None:
+                if pageNo == 1 and self.is_db_connected:
+                    try:
+                        totalCount = int(root.findtext("totalCount", 0))
+                        total_pages = (totalCount + numOfRows - 1) // numOfRows
+                        print(f"INFO: 총 {totalCount}건의 서비스. 총 {total_pages} 페이지.")
+                    except ValueError:
+                         print("WARN: totalCount 값을 읽을 수 없어 1페이지만 처리합니다.")
+                         total_pages = 1
 
-def save_csv(path: str, records: List[Dict]) -> str:
-    if not records:
-        return path
-    flattened = []
-    for svc in records:
-        row = dict(svc)
-        contacts = svc.get("contact_info") or []
-        row["contact_numbers"] = "; ".join([c.get("contact_number","") for c in contacts if c.get("contact_number")])
-        row["contact_names"]   = "; ".join([c.get("contact_name","") for c in contacts if c.get("contact_name")])
-        sites = svc.get("related_websites") or []
-        row["website_urls"] = "; ".join([s.get("url","") for s in sites if s.get("url")])
-        row["website_names"] = "; ".join([s.get("name","") for s in sites if s.get("name")])
-        forms = svc.get("forms_documents") or []
-        row["form_urls"]  = "; ".join([f.get("download_url","") for f in forms if f.get("download_url")])
-        row["form_names"] = "; ".join([f.get("document_name","") for f in forms if f.get("document_name")])
-        laws = svc.get("legal_basis") or []
-        row["legal_basis_list"] = "; ".join(laws)
-        for k in ["contact_info","related_websites","forms_documents","legal_basis"]:
-            row.pop(k, None)
-        flattened.append(row)
-    df = pd.DataFrame(flattened)
-    df.to_csv(path, index=False, encoding="utf-8-sig")
-    return path
-'''
+                serv_list_elements = root.findall('servList') 
+                current_ids = [item.findtext("servId") for item in serv_list_elements if item.findtext("servId")]
+                serv_ids.extend(current_ids)
+                
+                if self.is_db_connected:
+                    print(f"INFO: 페이지 {pageNo}/{total_pages} 수집 완료. 현재까지 {len(serv_ids)}개.")
+                
+                pageNo += 1
+                
+                if not self.is_db_connected and pageNo > 1:
+                    break
+                    
+                if self.is_db_connected and pageNo <= total_pages:
+                     time.sleep(1) # 1초 대기 (트래픽 제한 회피)
+            else:
+                print("ERROR: 목록 조회 API에서 데이터를 가져오는 데 실패하여 수집을 중단합니다.")
+                break
+
+        print(f"INFO: 최종 {len(serv_ids)}개의 서비스 ID 수집 완료.")
+        return list(set(serv_ids))
+
+    def _get_detailed_data(self, serv_id):
+        """상세조회 API를 통해 서비스 상세 정보 획득"""
+        params = {
+            "serviceKey": API_KEY,
+            "servId": serv_id,
+        }
+        return self._api_request(DETAIL_API_URL, params)
+
+    def _transform_data(self, detail_root):
+        """XML ElementTree root 객체(상세조회 결과)를 받아 DB 스키마에 맞춰 변환"""
+        if detail_root is None or not detail_root.findtext("servId"):
+            return None, None
+        
+        serv_id = detail_root.findtext("servId")
+        
+        def format_date(date_str):
+            if date_str and len(date_str) == 8:
+                return f"{date_str[:4]}-{date_str[4:6]}-{date_str[6:8]}"
+            return None
+
+        data_to_insert = {
+            "id": uuid4().hex,
+            "title": detail_root.findtext("servNm", "제목 없음"),
+            "content": detail_root.findtext("servDgst", "내용 없음"), 
+            "organization": detail_root.findtext("bizChrDeptNm", "정보 없음"), 
+            "region": f"{detail_root.findtext('ctpvNm', '')} {detail_root.findtext('sggNm', '')}".strip(), 
+            "local_upload_date": format_date(detail_root.findtext("lastModYmd", datetime.today().strftime('%Y%m%d'))),
+            "start_date": format_date(detail_root.findtext("enfcBgngYmd", datetime.today().strftime('%Y%m%d'))),
+            "end_date": format_date(detail_root.findtext("enfcEndYmd")),
+            "provider": detail_root.findtext("srvPvsnNm", "정보 없음"), 
+            "source_url": f"API_SOURCE_URL_FOR_DETAIL?servId={serv_id}" 
+        }
+
+        insert_tuple = tuple(data_to_insert.get(col, None) for col in DB_COLUMNS)
+        
+        return data_to_insert, insert_tuple
+
+    def run_collector(self):
+        """데이터 수집 및 DB 저장/로컬 확인 실행 함수"""
+
+        self.db_connection, self.is_db_connected = self._connect_db()
+
+        serv_ids = self._get_serv_id_list()
+        
+        if not serv_ids:
+            print("INFO: 수집할 서비스 ID가 없습니다.")
+            return
+
+        total_count = len(serv_ids)
+        preview_count = 0
+        success_count = 0 # <-- **수정:** success_count 초기화
+        
+        limit_count = self.max_preview if not self.is_db_connected else total_count
+        
+        print(f"\nINFO: 상세 정보 수집 및 변환 시작 (총 {total_count}건 중 {'모두 DB 저장 시도' if self.is_db_connected else f'최대 {limit_count}건 로컬 확인'})...")
+
+        for i, serv_id in enumerate(serv_ids):
+            detail_root = self._get_detailed_data(serv_id)
+            
+            if detail_root:
+                transformed_dict, transformed_tuple = self._transform_data(detail_root)
+                
+                if self.is_db_connected:
+                    success_count += self._insert_to_db(transformed_tuple)
+                    if (i + 1) % 100 == 0 or (i + 1) == total_count:
+                        print(f"INFO: 진행률 {i+1}/{total_count} 완료. DB 저장 성공 건수: {success_count}")
+                
+                elif len(self.preview_data) < self.max_preview:
+                    self.preview_data.append(transformed_dict)
+                
+            if not self.is_db_connected and len(self.preview_data) >= self.max_preview:
+                print(f"\nINFO: 로컬 확인을 위해 {self.max_preview}건만 수집 후 중단합니다.")
+                break
+
+        if not self.is_db_connected:
+            self._print_preview_data()
+        else:
+             print("\n=============================================")
+             print(f"INFO: 전체 DB 작업 완료. 총 {total_count}건 중 {success_count}건 DB에 저장/업데이트 성공.")
+             print("=============================================")
+
+    def _print_preview_data(self):
+        """변환된 샘플 데이터를 화면에 출력하여 확인"""
+        print("\n=============================================")
+        print(f"INFO: 최종 DB 삽입 형식으로 변환된 데이터 ({len(self.preview_data)}건) 미리보기")
+        print("=============================================")
+        
+        if not self.preview_data:
+            print("변환된 데이터가 없습니다.")
+            return
+
+        for i, data in enumerate(self.preview_data):
+            print(f"\n--- 샘플 데이터 {i+1} ---")
+            for col in DB_COLUMNS:
+                value = data.get(col, "N/A")
+                if col == "content" and len(str(value)) > 100:
+                    value = str(value)[:100] + "..."
+                print(f"  {col:<20}: {value}")
