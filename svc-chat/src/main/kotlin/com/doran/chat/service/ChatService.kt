@@ -1,8 +1,8 @@
 package com.doran.chat.service
 
 import com.doran.chat.controller.*
-import com.doran.chat.domain.ChatRoom
-import com.doran.chat.domain.UserChat
+import com.doran.chat.entity.ChatRoom
+import com.doran.chat.entity.UserChat
 import com.doran.chat.repository.ChatRoomRepository
 import com.doran.chat.repository.UserChatRepository
 import com.doran.chat.global.ErrorCode

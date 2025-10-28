@@ -1,6 +1,6 @@
 package com.doran.chat.repository
 
-import com.doran.chat.domain.ChatRoom
+import com.doran.chat.entity.ChatRoom
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository

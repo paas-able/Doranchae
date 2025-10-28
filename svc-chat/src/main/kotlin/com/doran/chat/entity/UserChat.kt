@@ -1,4 +1,4 @@
-package com.doran.chat.domain
+package com.doran.chat.entity
 
 import jakarta.persistence.*
 import java.time.LocalDateTime
