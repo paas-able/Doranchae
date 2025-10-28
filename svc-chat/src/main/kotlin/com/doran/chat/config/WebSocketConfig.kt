@@ -2,6 +2,7 @@ package com.doran.chat.config
 
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.Lazy
 import org.springframework.messaging.simp.config.MessageBrokerRegistry
 import org.springframework.scheduling.TaskScheduler
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker
@@ -12,6 +13,7 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 @EnableWebSocketMessageBroker
 class WebSocketConfig : WebSocketMessageBrokerConfigurer {
     @Autowired
+    @Lazy
     private lateinit var taskScheduler: TaskScheduler
 
     override fun registerStompEndpoints(registry: StompEndpointRegistry) {
@@ -22,9 +24,11 @@ class WebSocketConfig : WebSocketMessageBrokerConfigurer {
 
     override fun configureMessageBroker(registry: MessageBrokerRegistry) {
         registry.enableSimpleBroker("/topic")
+            // 하트비트를 위해 주입받은 스케줄러를 다시 설정합니다.
             .setTaskScheduler(taskScheduler)
             .setHeartbeatValue(longArrayOf(10_000, 20_000))
 
         registry.setApplicationDestinationPrefixes("/app")
     }
 }
+
