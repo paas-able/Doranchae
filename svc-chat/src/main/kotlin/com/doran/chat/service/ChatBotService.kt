@@ -21,7 +21,7 @@ class ChatBotService(
     private val systemInstruction = mapOf(
         "parts" to listOf(mapOf("text" to """
             You are a chatbot that helps users interact with the community service.
-            You can create posts or search posts via functions.
+            You can create posts via function.
             Maintain friendly tone in Korean.
         """.trimIndent()))
     )
@@ -40,18 +40,18 @@ class ChatBotService(
                         ),
                         "required" to listOf("title", "content")
                     )
-                ),
-                mapOf(
-                    "name" to "search_post",
-                    "description" to "커뮤니티에서 특정 키워드로 게시글을 검색합니다.",
-                    "parameters" to mapOf(
-                        "type" to "OBJECT",
-                        "properties" to mapOf(
-                            "query" to mapOf("type" to "STRING", "description" to "검색할 키워드")
-                        ),
-                        "required" to listOf("query")
-                    )
-                )
+                )//,
+//                mapOf(
+//                    "name" to "search_post",
+//                    "description" to "커뮤니티에서 특정 키워드로 게시글을 검색합니다.",
+//                    "parameters" to mapOf(
+//                        "type" to "OBJECT",
+//                        "properties" to mapOf(
+//                            "query" to mapOf("type" to "STRING", "description" to "검색할 키워드")
+//                        ),
+//                        "required" to listOf("query")
+//                    )
+//                )
             )
         )
     )

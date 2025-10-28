@@ -6,15 +6,12 @@ import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.client.WebClient
 
 @Component
-class FunctionCallHandler(
-    @Value("\${community-service.url}") private val communityServiceUrl: String
-) {
+class FunctionCallHandler{
     private val webClient = WebClient.create()
-
     fun handleFunctionCall(functionName: String, args: Map<String, Any>): String {
         return when (functionName) {
             "create_post" -> createPost(args["title"] as String, args["content"] as String)
-            "search_post" -> searchPost(args["query"] as String)
+            //"search_post" -> searchPost(args["query"] as String)
             else -> "알 수 없는 기능입니다."
         }
     }
@@ -23,7 +20,7 @@ class FunctionCallHandler(
         val body = mapOf("title" to title, "content" to content)
 
         val response = webClient.post()
-            .uri("$communityServiceUrl/api/community/post")
+            .uri("http://localhost:8080/api/community/post")
             .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(body)
             .retrieve()
@@ -33,15 +30,15 @@ class FunctionCallHandler(
         return "게시글 작성 완료: ${response?.get("message") ?: "성공"}"
     }
 
-    private fun searchPost(query: String): String {
-        val response = webClient.get()
-            .uri("$communityServiceUrl/api/community/search?query=$query")
-            .accept(MediaType.APPLICATION_JSON)
-            .retrieve()
-            .bodyToMono(Map::class.java)
-            .block()
-
-        val posts = response?.get("data") ?: "검색 결과가 없습니다."
-        return "검색 결과: $posts"
-    }
+//    private fun searchPost(query: String): String {
+//        val response = webClient.get()
+//            .uri("http://localhost:8080/api/community/search?query=$query")
+//            .accept(MediaType.APPLICATION_JSON)
+//            .retrieve()
+//            .bodyToMono(Map::class.java)
+//            .block()
+//
+//        val posts = response?.get("data") ?: "검색 결과가 없습니다."
+//        return "검색 결과: $posts"
+//    }
 }
