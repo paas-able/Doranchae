@@ -1,7 +1,7 @@
 version: "3.9"
 
 services:
-  user:
+  auth:
     build:
       context: ./svc-user
     image: doranlocal/svc-user:local
