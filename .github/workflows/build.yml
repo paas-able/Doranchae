@@ -109,6 +109,7 @@ jobs:
     
     strategy:
       fail-fast: false
+      max-parallel: 1
       matrix:
         include:
           - id: user
@@ -187,7 +188,6 @@ jobs:
           else
             git commit -m "Update image for ${{ matrix.id }} to ${{ github.sha }}"
             
-            # ⚠️ FIX: 푸시 직전에 다른 변경사항을 rebase로 가져와 충돌을 해결합니다.
             echo "Pulling latest changes with rebase..."
             git pull --rebase origin ${{ env.MANIFEST_BRANCH }}
             
