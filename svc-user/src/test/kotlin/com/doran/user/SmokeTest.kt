@@ -1,4 +1,4 @@
-package com.doran.auth
+package com.doran.user
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.assertTrue
 
