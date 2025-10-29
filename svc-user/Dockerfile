@@ -8,8 +8,7 @@ COPY build.gradle.kts settings.gradle.kts gradle.properties* ./
 RUN chmod +x gradlew && ./gradlew --no-daemon --version >/dev/null 2>&1 || true
 # 소스 복사 후 빌드
 COPY src src
-RUN ./gradlew --no-daemon clean bootJar -x test
-
+RUN ./gradlew --no-daemon --refresh-dependencies clean bootJar -x test
 # ---------- run ----------
 FROM eclipse-temurin:17-jre
 WORKDIR /app
