@@ -8,6 +8,14 @@ services:
     container_name: doran-user
     ports:
       - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://db:3306/user_db?useSSL=false&allowPublicKeyRetrieval=true
+      - SPRING_DATASOURCE_USERNAME=doranchae_user
+      - SPRING_DATASOURCE_PASSWORD=password
+      
 
   community:
     build:
@@ -16,6 +24,14 @@ services:
     container_name: doran-community
     ports:
       - "8081:8081"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://db:3306/community_db?useSSL=false&allowPublicKeyRetrieval=true
+      - SPRING_DATASOURCE_USERNAME=doranchae_user
+      - SPRING_DATASOURCE_PASSWORD=password
+      
 
   penpal:
     build:
@@ -24,6 +40,14 @@ services:
     container_name: doran-penpal
     ports:
       - "8082:8082"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://db:3306/penpal_db?useSSL=false&allowPublicKeyRetrieval=true
+      - SPRING_DATASOURCE_USERNAME=doranchae_user
+      - SPRING_DATASOURCE_PASSWORD=password
+      
 
   welfare:
     build:
@@ -32,6 +56,14 @@ services:
     container_name: doran-welfare
     ports:
       - "8083:8083"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://db:3306/welfare_db?useSSL=false&allowPublicKeyRetrieval=true
+      - SPRING_DATASOURCE_USERNAME=doranchae_user
+      - SPRING_DATASOURCE_PASSWORD=password
+      
 
   chat:
     build:
@@ -40,6 +72,14 @@ services:
     container_name: doran-chat
     ports:
       - "8084:8084"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://db:3306/chat_db?useSSL=false&allowPublicKeyRetrieval=true
+      - SPRING_DATASOURCE_USERNAME=doranchae_user
+      - SPRING_DATASOURCE_PASSWORD=password
+      
 
   app:
     build:
@@ -53,9 +93,22 @@ services:
       - community
       - penpal
       - welfare
-    # (선택) 로컬 단독 실행/특수 환경에서 내부 주소를 바꾸고 싶다면 주석 해제
-    # environment:
-    #   - AUTH_INTERNAL_URL=http://auth:8080
-    #   - COMMUNITY_INTERNAL_URL=http://community:8081
-    #   - PENPAL_INTERNAL_URL=http://penpal:8082
-    #   - WELFARE_INTERNAL_URL=http://welfare:8083
+      - chat
+    
+  db:
+    image: mysql:8.0
+    container_name: doran-mysql-db
+    ports:
+      - "3306:3306" # 로컬에서 DBeaver 등으로 접속하기 위해 포트 개방
+    environment:
+      - MYSQL_ROOT_PASSWORD=rootpassword # (임의 설정)
+      # - MYSQL_USER=doranchae_user
+      # - MYSQL_PASSWORD=password
+    volumes:
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command: --default-authentication-plugin=mysql_native_password
