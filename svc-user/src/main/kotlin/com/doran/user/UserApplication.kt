@@ -1,13 +1,12 @@
-package com.doran.user.domain
+package com.doran.user
 
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
 import org.springframework.context.annotation.ComponentScan
 
 @SpringBootApplication
-@ComponentScan(basePackages = ["com.doran.user.config", "com.doran.user.domain"])
-class SvcUserApplication
+class UserApplication
 
 fun main(args: Array<String>) {
-	runApplication<SvcUserApplication>(*args)
+	runApplication<UserApplication>(*args)
 }

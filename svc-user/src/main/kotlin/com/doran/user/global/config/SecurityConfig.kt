@@ -1,5 +1,7 @@
-package com.doran.user.domain.config
+package com.doran.user.global.config
 
+import com.doran.user.global.jwt.JwtAuthenticationFilter // JwtAuthenticationFilter 임포트
+import com.doran.user.global.jwt.JwtTokenProvider // JwtTokenProvider 임포트
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
@@ -11,26 +13,31 @@ import org.springframework.security.web.SecurityFilterChain
 import org.springframework.web.cors.CorsConfiguration
 import org.springframework.web.cors.CorsConfigurationSource
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource
+import org.springframework.security.authentication.AuthenticationManager
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
 
 @Configuration
-@EnableWebSecurity(debug = true)
-class SecurityConfig {
+@EnableWebSecurity
+class SecurityConfig (
+    private val jwtTokenProvider: JwtTokenProvider
+) {
    @Bean
-   fun passwordEncoder(): PasswordEncoder {
-       return BCryptPasswordEncoder()
-   }
-   @Bean
-   fun filterChain(http: HttpSecurity): SecurityFilterChain {
-       println(http.toString())
+   fun securityFilterChain(http: HttpSecurity): SecurityFilterChain {
        http.csrf { it.disable() }
            .httpBasic { it.disable() }
            .cors { it.configurationSource(corsConfigurationSource()) }
-           .authorizeHttpRequests {
-               it.requestMatchers("/**").permitAll()
-               it.anyRequest().permitAll()
-           }
-           .sessionManagement{}
-           .sessionManagement{SessionCreationPolicy.STATELESS}
+           .formLogin { it.disable() }
+           .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
+           .authorizeHttpRequests { auth ->
+                auth
+                    .requestMatchers("/api/user/join", "/api/user/login").permitAll() 
+                    .anyRequest().authenticated() 
+            }
+            .addFilterBefore(
+                JwtAuthenticationFilter(jwtTokenProvider),
+                UsernamePasswordAuthenticationFilter::class.java
+            )
        return http.build()
    }
 
@@ -44,4 +51,9 @@ class SecurityConfig {
        source.registerCorsConfiguration("/**", configuration)
        return source
    }
+
+   @Bean
+    fun authenticationManager(authenticationConfiguration: AuthenticationConfiguration): AuthenticationManager {
+        return authenticationConfiguration.authenticationManager
+    }
 }

@@ -1,9 +1,9 @@
 package com.doran.user.domain.controllers
 
-import com.doran.penpal.global.ApiResponse
-import com.doran.penpal.global.DataResponse
-import com.doran.penpal.global.ErrorCode
-import com.doran.penpal.global.exception.CustomException
+import com.doran.user.global.ApiResponse
+import com.doran.user.global.DataResponse
+import com.doran.user.global.ErrorCode
+import com.doran.user.global.exception.CustomException
 import com.doran.user.domain.UserService
 import com.doran.user.enums.InterestOption
 import org.springframework.http.ResponseEntity

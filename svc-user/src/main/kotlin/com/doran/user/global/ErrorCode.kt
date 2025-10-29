@@ -1,4 +1,4 @@
-package com.doran.penpal.global
+package com.doran.user.global
 
 import org.springframework.http.HttpStatus
 
@@ -15,4 +15,5 @@ enum class ErrorCode(
 
     // USER
     USER_NOT_FOUND(HttpStatus.BAD_REQUEST, "USER4001", "해당 유저가 존재하지 않습니다."),
+    USER_ID_DUPLICATED(HttpStatus.CONFLICT, "USER4002", "이미 사용중인 아이디입니다.")
 }
