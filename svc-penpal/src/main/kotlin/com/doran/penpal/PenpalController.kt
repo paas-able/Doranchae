@@ -1,6 +1,7 @@
 package com.doran.penpal
 
 import com.doran.penpal.entity.PenpalMessage
+import com.doran.penpal.feign.dto.UserInfoDetail
 import com.doran.penpal.global.ApiResponse
 import com.doran.penpal.global.BaseResponse
 import com.doran.penpal.global.DataResponse
