@@ -1,5 +1,6 @@
 package com.doran.chat.global.config
 
+import com.doran.chat.global.jwt.StompAuthChannelInterceptor
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Lazy
