@@ -7,12 +7,14 @@ import com.doran.penpal.global.BaseResponse
 import com.doran.penpal.global.DataResponse
 import com.doran.penpal.global.ErrorCode
 import com.doran.penpal.global.exception.CustomException
+import com.doran.penpal.global.jwt.auth.CustomUserDetails
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.http.ResponseEntity
+import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.*
 import java.time.LocalDateTime
 import java.util.UUID

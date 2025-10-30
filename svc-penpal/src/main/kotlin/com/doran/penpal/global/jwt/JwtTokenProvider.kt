@@ -1,5 +1,6 @@
 package com.doran.penpal.global.jwt
 
+import com.doran.penpal.global.jwt.auth.CustomUserDetails
 import io.jsonwebtoken.Claims
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.security.Keys
