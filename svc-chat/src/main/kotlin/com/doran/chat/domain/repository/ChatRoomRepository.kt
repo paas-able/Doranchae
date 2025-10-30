@@ -1,6 +1,6 @@
-package com.doran.chat.repository
+package com.doran.chat.domain.repository
 
-import com.doran.chat.domain.ChatRoom
+import com.doran.chat.domain.entity.ChatRoom
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
@@ -22,6 +22,13 @@ interface ChatRoomRepository : JpaRepository<ChatRoom, UUID> {
 
     fun findByParticipantIdsContainingAndStatus(
         targetId: UUID,
+        status: ChatRoom.ChatStatus,
+        pageable: Pageable
+    ): Page<ChatRoom>
+
+    fun findByParticipantIdsContainingAndParticipantIdsNotContainingAndStatus(
+        userId: UUID,
+        chatbotId: UUID,
         status: ChatRoom.ChatStatus,
         pageable: Pageable
     ): Page<ChatRoom>
