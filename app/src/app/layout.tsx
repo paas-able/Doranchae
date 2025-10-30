@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import BottomNav from "@components/NavBar";
-import Header from "@components/Header"
+import LayoutWrapper from "@components/LayoutWrapper"; 
 
 export const metadata: Metadata = {
   title: "도란채",
@@ -13,12 +12,16 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  
+
   return (
     <html lang="en">
-      <body>
-        <Header/>
-        {children}
-        <BottomNav/>
+      <body className="mx-auto w-full max-w-[430px] flex flex-col min-h-screen">
+        
+        <LayoutWrapper>
+          {children}
+        </LayoutWrapper>
+        
       </body>
     </html>
   );
