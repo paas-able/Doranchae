@@ -14,15 +14,14 @@ import javax.crypto.SecretKey
 
 @Component
 class JwtTokenProvider(
-    @Value("\${jwt.secret}")
-    private val secretKeyString: String
+    @Value ("\${JWT_SECRET: \${jwt.secret}}") private val secret: String
 ) {
-    private val secretKey: SecretKey = Keys.hmacShaKeyFor(secretKeyString.toByteArray())
+    private val key: SecretKey = Keys.hmacShaKeyFor(Base64.getDecoder().decode(secret))
 
     fun getAuthentication(token: String): Authentication {
         try {
             val claims = Jwts.parserBuilder()
-                .setSigningKey(secretKey)
+                .setSigningKey(key)
                 .build()
                 .parseClaimsJws(token)
                 .body
