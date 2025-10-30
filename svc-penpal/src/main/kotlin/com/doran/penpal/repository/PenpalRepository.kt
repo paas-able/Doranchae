@@ -22,4 +22,19 @@ interface PenpalRepository: JpaRepository<Penpal, UUID> {
     ): Optional<Penpal>
 
     fun findPenpalByParticipantIdsContaining(userId: UUID, pageable: Pageable): Page<Penpal>
+
+    @Query(
+        value = """
+        SELECT BIN_TO_UUID(pp2.participant_id)
+        FROM penpal_participants pp2
+        WHERE pp2.penpal_id IN (
+            SELECT pp1.penpal_id 
+            FROM penpal_participants pp1
+            WHERE pp1.participant_id = :myUserId
+        )
+        AND pp2.participant_id != :myUserId
+    """,
+        nativeQuery = true
+    )
+    fun findExistingFriendIds(@Param("myUserId") myUserId: UUID): MutableList<String>
 }

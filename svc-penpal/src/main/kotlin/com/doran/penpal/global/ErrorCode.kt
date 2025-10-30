@@ -16,4 +16,5 @@ enum class ErrorCode(
     // Penpal
     PENPAL_NOT_FOUND(HttpStatus.BAD_REQUEST, "PENP4001", "해당 펜팔이 존재하지 않습니다."),
     PENPAL_ALREADY_INACTIVE(HttpStatus.BAD_REQUEST, "PENP4002", "이미 비활성화 된 펜팔입니다"),
+    NOT_YOUR_PENPAL(HttpStatus.UNAUTHORIZED, "PENP4011", "펜팔에 대한 권한이 없습니다")
 }

@@ -97,7 +97,7 @@ class UserService(
 
     //랜덤유저
     @Transactional 
-    fun findRandomUserId(): Optional<UUID> {
-        return userRepository.findRandomUserId()
+    fun findRandomUserId(excludeIdList: MutableList<String>): Optional<String> {
+        return userRepository.findRandomUserId(excludeIdList = excludeIdList)
     }
 }
