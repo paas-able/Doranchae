@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.*
 import java.time.LocalDateTime
 import java.util.UUID
 import org.springframework.security.core.annotation.AuthenticationPrincipal
-import com.doran.penpal.global.jwt.auth.CustomUserDetails
+import com.doran.penpal.global.jwt.CustomUserDetails
 
 @RestController
 @RequestMapping("/api/penpal")
