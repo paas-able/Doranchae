@@ -1,12 +1,14 @@
-package com.doran.chat.controller
+package com.doran.chat.domain.controller
 
-import com.doran.chat.repository.ChatRoomRepository
-import com.doran.chat.service.ChatBotService
-import com.doran.chat.service.ChatService
+import com.doran.chat.domain.repository.ChatRoomRepository
+import com.doran.chat.domain.service.ChatBotService
+import com.doran.chat.domain.service.ChatService
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.messaging.handler.annotation.MessageMapping
 import org.springframework.messaging.handler.annotation.Payload
+import org.springframework.messaging.simp.SimpMessageHeaderAccessor
 import org.springframework.messaging.simp.SimpMessagingTemplate
+import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.stereotype.Controller
 import java.time.LocalDateTime
 import java.util.*
@@ -24,19 +26,24 @@ class ChatController(
     private val CHATBOT_USER_ID: UUID = UUID.fromString(chatbotUserId)
 
     @MessageMapping("/chat/send")
-    fun sendMessage(@Payload message: ChatMessagesRequest) {
+    fun sendMessage(
+        @Payload message: ChatMessagesRequest,
+        headerAccessor: SimpMessageHeaderAccessor
+    ) {
+        val userId = headerAccessor.sessionAttributes?.get("userId") as UUID
+
         val saved = chatService.saveMessage(
             message.chatRoomId,
-            message.senderId,
+            userId,
             message.content,
             LocalDateTime.now()
         )
 
         messagingTemplate.convertAndSend("/topic/chat/room/${message.chatRoomId}", saved)
 
-        val chatRoom = chatRoomRepository.findById(message.chatRoomId).getOrNull()
+        val chatRoom = chatRoomRepository.findById(message.chatRoomId).orElse(null)
         if (chatRoom != null && CHATBOT_USER_ID in chatRoom.participantIds) {
-            val botResponseContent = chatBotService.getChatbotResponse(message.senderId, message.content)
+            val botResponseContent = chatBotService.getChatbotResponse(userId, message.content)
 
             val savedBotMessage = chatService.saveMessage(
                 message.chatRoomId,
@@ -51,7 +58,6 @@ class ChatController(
 
     data class ChatMessagesRequest(
         val chatRoomId: UUID,
-        val senderId: UUID,
         val content: String
     )
 }

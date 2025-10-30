@@ -1,12 +1,13 @@
 package com.doran.chat.service
 
-import com.doran.chat.controller.*
 import com.doran.chat.entity.ChatRoom
 import com.doran.chat.entity.UserChat
 import com.doran.chat.repository.ChatRoomRepository
 import com.doran.chat.repository.UserChatRepository
 import com.doran.chat.global.ErrorCode
+import com.doran.chat.ChatDto.*
 import com.doran.chat.global.exception.CustomException
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
@@ -16,18 +17,20 @@ import java.util.*
 @Service
 class ChatService(
     private val chatRoomRepository: ChatRoomRepository,
-    private val userChatRepository: UserChatRepository
+    private val userChatRepository: UserChatRepository,
+    @Value("\${chatbot.user-id}") chatbotUserId: String
 ) {
+    private val CHATBOT_USER_ID: UUID = UUID.fromString(chatbotUserId)
 
     fun createChatRoom(userId1: UUID, userId2: UUID): UUID {
 
-        val participantIds: Set<UUID> = setOf(userId1,userId2)
+        val participantIds: Set<UUID> = setOf(userId1, userId2)
         val existingRoom = chatRoomRepository.findChatRoomByParticipantIds(participantIds, participantIds.size)
-            if (existingRoom.isPresent)
-                throw CustomException(ErrorCode.CHAT_DUPLICATE_ROOM)
+        if (existingRoom.isPresent)
+            throw CustomException(ErrorCode.CHAT_DUPLICATE_ROOM)
 
         val chatRoom = ChatRoom(
-            participantIds = setOf(userId1,userId2)
+            participantIds = setOf(userId1, userId2)
         )
 
         val savedChatRoom = chatRoomRepository.save(chatRoom)
@@ -100,5 +103,20 @@ class ChatService(
         chatRoom.status = ChatRoom.ChatStatus.INACVTIVATE
         return chatRoomRepository.save(chatRoom)
     }
-}
 
+    fun getChatBotRoom(userId: UUID): UUID {
+        val participantIds: Set<UUID> = setOf(CHATBOT_USER_ID, userId)
+        val existingRoom = chatRoomRepository.findChatRoomByParticipantIds(participantIds, participantIds.size)
+            .orElseThrow { (CustomException(ErrorCode.CHAT_ROOM_NOT_FOUND)) }
+        return existingRoom.id;
+    }
+
+    fun <T> createPageInfo(info: Page<T>): PageInfo {
+        return PageInfo(
+            isFirst = info.isFirst,
+            isLast = info.isLast,
+            currentPage = info.number,
+            totalPages = info.totalPages
+        )
+    }
+}
