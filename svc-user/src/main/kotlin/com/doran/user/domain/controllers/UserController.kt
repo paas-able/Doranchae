@@ -104,11 +104,4 @@ class UserController(
         return ApiResponse.success(responseDto)
     }
 
-    @GetMapping("/randfriend")
-    fun getRandomPenpalUserId(): ResponseEntity<DataResponse<Map<String, UUID>>> {
-        val randomUserId = userService.findRandomUserId()
-            .orElseThrow { CustomException(ErrorCode.USER_NOT_FOUND) }
-
-        return ApiResponse.success(mapOf("userId" to randomUserId))
-    }
 }

@@ -1,4 +1,4 @@
-package com.doran.chat.service
+package com.doran.chat.domain.service
 
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.MediaType
@@ -19,11 +19,15 @@ class ChatBotService(
     private val conversationHistory = ConcurrentHashMap<UUID, MutableList<Map<String, Any>>>()
 
     private val systemInstruction = mapOf(
-        "parts" to listOf(mapOf("text" to """
+        "parts" to listOf(
+            mapOf(
+                "text" to """
             You are a chatbot that helps users interact with the community service.
-            You can create posts or search posts via functions.
+            You can create posts via function.
             Maintain friendly tone in Korean.
-        """.trimIndent()))
+        """.trimIndent()
+            )
+        )
     )
 
     private val tools = listOf(
@@ -40,23 +44,12 @@ class ChatBotService(
                         ),
                         "required" to listOf("title", "content")
                     )
-                ),
-                mapOf(
-                    "name" to "search_post",
-                    "description" to "커뮤니티에서 특정 키워드로 게시글을 검색합니다.",
-                    "parameters" to mapOf(
-                        "type" to "OBJECT",
-                        "properties" to mapOf(
-                            "query" to mapOf("type" to "STRING", "description" to "검색할 키워드")
-                        ),
-                        "required" to listOf("query")
-                    )
                 )
             )
         )
     )
 
-    fun getChatbotResponse(userId: UUID, userMessage: String): String {
+    fun getChatbotResponse(userId: UUID, userMessage: String, userJwt: String): String {
         println("🧠 [ChatBotService] user($userId) message: $userMessage")
 
         val messages = conversationHistory.getOrPut(userId) { mutableListOf() }
@@ -78,7 +71,7 @@ class ChatBotService(
 
             println("🔧 [ChatBotService] Function call detected: $functionName $arguments")
 
-            val result = functionCallHandler.handleFunctionCall(functionName, arguments)
+            val result = functionCallHandler.handleFunctionCall(functionName, arguments, userJwt)
 
             val functionResponseContent = mapOf(
                 "role" to "function",

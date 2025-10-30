@@ -1,16 +1,16 @@
 package com.doran.user.domain.controllers
 
+import com.doran.user.domain.UserService
 import com.doran.user.global.ApiResponse
 import com.doran.user.global.DataResponse
 import com.doran.user.global.ErrorCode
+import com.doran.user.global.auth.CustomUserDetails
 import com.doran.user.global.exception.CustomException
-import com.doran.user.domain.UserService
+import org.springframework.security.core.Authentication
+import org.springframework.web.bind.annotation.*
+import java.util.*
 import com.doran.user.enums.InterestOption
 import org.springframework.http.ResponseEntity
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RestController
 import java.time.LocalDate
 import java.util.*
 import java.util.stream.Collectors
@@ -37,6 +37,14 @@ class UserInternalController (
             interests = userInterestList
         )
         return ApiResponse.success(responseDto)
+    }
+
+    @GetMapping("/randfriend")
+    fun getRandomPenpalUserId(): ResponseEntity<DataResponse<Map<String, UUID>>> {
+        val randomUserId = userService.findRandomUserId()
+            .orElseThrow { CustomException(ErrorCode.USER_NOT_FOUND) }
+
+        return ApiResponse.success(mapOf("userId" to randomUserId))
     }
 }
 
