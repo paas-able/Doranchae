@@ -9,7 +9,6 @@ import com.doran.penpal.global.ErrorCode
 import com.doran.penpal.global.exception.CustomException
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
-import jakarta.validation.constraints.NotNull
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.http.ResponseEntity
@@ -51,15 +50,16 @@ class PenpalController(
         return ApiResponse.success(responseDto)
     }
 
-    @GetMapping("/messages")
-    fun retrieveMessages(@AuthenticationPrincipal userDetails: CustomUserDetails, @Valid @RequestBody req: RetrieveMesssageRequest, pageable: Pageable): ResponseEntity<DataResponse<RetrieveMessageResponse>> {
+    @GetMapping("/{penpalId}/messages")
+    fun retrieveMessages(@AuthenticationPrincipal userDetails: CustomUserDetails, @PathVariable penpalId: UUID, pageable: Pageable): ResponseEntity<DataResponse<RetrieveMessageResponse>> {
         val userId = UUID.fromString(userDetails.userId)
-        val result = penpalService.retrieveMessages(userId = UUID.fromString(userDetails.userId), penpalId = req.penpalId, pageable = pageable)
+        val result = penpalService.retrieveMessages(userId = UUID.fromString(userDetails.userId), penpalId = penpalId, pageable = pageable)
         val pageInfo = createPageInfo(result)
 
         val messages: List<PenpalMesssageInfo> = if (!result.isEmpty) {
-            result.content.map { it ->
-                PenpalMesssageInfo(id = it.id, content = it.content, sentAt = it.createdAt, status = it.status.toString(), isFromUser = (it.sendFrom == userId))
+            result.content
+                .map { it ->
+                PenpalMesssageInfo(id = it.id, content = it.content, sentAt = it.createdAt, status = it.status.getName(), isFromUser = (it.sendFrom == userId))
             }
         } else {
             emptyList()
@@ -117,11 +117,6 @@ data class PageInfo (
     var isLast: Boolean,
     var currentPage: Int,
     var totalPages: Int
-)
-
-data class RetrieveMesssageRequest (
-    @field:NotNull(message = "조회하고자 하는 펜팔의 ID를 지정해주세요.")
-    val penpalId: UUID
 )
 
 data class RetrieveMessageResponse (

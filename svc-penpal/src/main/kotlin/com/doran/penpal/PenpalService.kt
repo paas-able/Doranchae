@@ -14,6 +14,7 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.LocalDateTime
 import java.util.*
 
 @Service
@@ -109,7 +110,7 @@ class PenpalService(
 
         val messages = penpalMessageRepository.findAllByPenpal(penpal, pageable)
 
-        if (messages.last().status == MessageStatus(status = Status.SENT)) {
+        if (messages.last().status == MessageStatus(status = Status.SENT) && LocalDateTime.now().equals(messages.last().createdAt.plusDays(1))) {
             messages.last().updateStatus(MessageStatus(status = Status.READ))
         }
 

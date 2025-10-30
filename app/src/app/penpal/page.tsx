@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { PenpalList } from './PenpalList'
 import { ChatList } from './ChatList'
+import Link from "next/link";
 
 type ActiveTab = 'penpal' | 'chat'
 
@@ -21,15 +22,15 @@ export default function PenpalApp() {
           style={{ backgroundColor: penpalBg }}
       >
         <header className="flex justify-between items-center p-4 pt-6">
-          <span className="text-sm" style={{ color: penpalTextLight }}>
+          <span className="text-sm invisible" style={{ color: penpalTextLight }}>
             임시저장함
           </span>
           <h1 className="text-2xl font-bold" style={{ color: penpalTextDark }}>
             펜팔
           </h1>
-          <span className="text-sm font-medium" style={{ color: penpalTextDark }}>
-            랜덤으로 보내기
-          </span>
+          <Link href={`/penpal/write?target=random`} className="text-sm font-medium" style={{ color: penpalTextDark }}>
+            랜덤 전송하기
+          </Link>
         </header>
 
         <nav className="grid grid-cols-2 rounded-t-lg overflow-hidden mt-4">
