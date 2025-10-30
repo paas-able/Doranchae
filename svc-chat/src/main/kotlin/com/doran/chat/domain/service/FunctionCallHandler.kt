@@ -1,4 +1,4 @@
-package com.doran.chat.service
+package com.doran.chat.domain.service
 
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.MediaType
@@ -12,6 +12,7 @@ class FunctionCallHandler{
         return when (functionName) {
             "create_post" -> createPost(args["title"] as String, args["content"] as String)
             //"search_post" -> searchPost(args["query"] as String)
+            //검색 기능 미구현인 관계로 추후 확장시 구현. 지금은 주석상태로 둘 것
             else -> "알 수 없는 기능입니다."
         }
     }

@@ -1,11 +1,11 @@
-package com.doran.chat.service
+package com.doran.chat.domain.service
 
-import com.doran.chat.entity.ChatRoom
-import com.doran.chat.entity.UserChat
-import com.doran.chat.repository.ChatRoomRepository
-import com.doran.chat.repository.UserChatRepository
+import com.doran.chat.domain.entity.ChatRoom
+import com.doran.chat.domain.entity.UserChat
+import com.doran.chat.domain.repository.ChatRoomRepository
+import com.doran.chat.domain.repository.UserChatRepository
 import com.doran.chat.global.ErrorCode
-import com.doran.chat.ChatDto.*
+import com.doran.chat.dto.ChatDto.*
 import com.doran.chat.global.exception.CustomException
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.domain.Page
