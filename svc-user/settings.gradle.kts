@@ -1,1 +1,1 @@
-rootProject.name = "svc-auth"
+rootProject.name = "svc-user"
