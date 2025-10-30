@@ -1,9 +1,7 @@
-# init.py (수정 완료: DB_PORT 추가)
-
 import os
 
 # 환경 변수에서 민감 정보 로드 (API 키는 로컬 테스트용 더미 키)
-API_KEY = os.getenv("WELFARE_API_KEY") 
+API_KEY = os.getenv("WELFARE_API_KEY", "95572ee30b74ca30cb0ebf98d2c26ee9f9aa322f606b5ccb7f68e21deae7e784") 
 
 # API 요청 파라미터 기본 설정 유지
 DEFAULT_LIFE = "005,006"        
@@ -19,24 +17,17 @@ DB_CONFIG = {
 }
 
 # DB 테이블 스키마 정보
-DB_COLUMNS = [
-    "id", "title", "content", "organization", "region", 
-    "local_upload_date", "start_date", "end_date", "provider", "source_url"
-]
+DB_COLUMNS = ('servId', 'title', 'content', 'organization', 'region', 'local_upload_date', 'provider', 'source_url')
 
 CREATE_TABLE_SQL = """
 CREATE TABLE IF NOT EXISTS welfare (
-    id BINARY(16) PRIMARY KEY,
+    servId VARCHAR(50) NOT NULL PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
-    content LONGTEXT NOT NULL,
-    organization VARCHAR(255) NOT NULL,
-    region VARCHAR(100) NOT NULL,
-    local_upload_date DATE NOT NULL,
-    start_date DATE NOT NULL,
-    end_date DATE,
-    provider VARCHAR(255) NOT NULL,
-    source_url VARCHAR(500) NOT NULL,
-    INDEX idx_region (region),
-    INDEX idx_title (title)
-);
+    content TEXT,
+    organization VARCHAR(255),
+    region VARCHAR(100),
+    local_upload_date DATE,
+    provider VARCHAR(100),
+    source_url VARCHAR(1024)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 """
