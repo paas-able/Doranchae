@@ -1,6 +1,6 @@
-package com.doran.welfare.global.exception
+package com.doran.user.global.exception
 
-import com.doran.welfare.global.ErrorCode
+import com.doran.user.global.ErrorCode
 import java.lang.RuntimeException
 
 class CustomException (

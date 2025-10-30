@@ -1,4 +1,4 @@
-package com.doran.welfare.global.exception
+package com.doran.user.global.exception
 
 import org.springframework.http.ResponseEntity
 import org.springframework.validation.FieldError
@@ -16,7 +16,7 @@ class CustomExceptionHandler {
             "code" to e.errorCode.code,
             "message" to e.errorCode.message
         )
-        return ResponseEntity.status(e.errorCode.httpStatus).body(body);
+        return ResponseEntity.status(e.errorCode.httpStatus).body(body)
     }
 
     @ExceptionHandler(RuntimeException::class)

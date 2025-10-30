@@ -1,4 +1,4 @@
-package com.doran.welfare.global
+package com.doran.user.global
 
 import org.springframework.http.HttpStatus
 
@@ -12,7 +12,8 @@ enum class ErrorCode(
     COMMON_BAD_REQUEST(HttpStatus.BAD_REQUEST, "COMM400", "Bad Request"),
     COMMON_UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "COMM401", "Unauthorized"),
     COMMON_INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "COMM500", "Internal Server Error"),
-    WELFARE_NOT_FOUND(HttpStatus.NOT_FOUND, "WEL404", "Welfare information doesn't exist"),
-    LIKE_ALREADY_EXISTS(HttpStatus.CONFLICT, "WEL409", "Like already exists"),
-    SCRAP_ALREADY_EXISTS(HttpStatus.CONFLICT, "WEL409", "Scrap already exists");
+
+    // USER
+    USER_NOT_FOUND(HttpStatus.BAD_REQUEST, "USER4001", "해당 유저가 존재하지 않습니다."),
+    USER_ID_DUPLICATED(HttpStatus.CONFLICT, "USER4002", "이미 사용중인 아이디입니다.")
 }

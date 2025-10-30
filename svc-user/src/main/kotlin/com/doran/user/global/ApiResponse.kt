@@ -1,4 +1,4 @@
-package com.doran.welfare.global
+package com.doran.user.global
 import org.springframework.http.ResponseEntity
 
 data class BaseResponse (
