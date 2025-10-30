@@ -1,6 +1,7 @@
 package com.doran.penpal
 
 import com.doran.penpal.entity.PenpalMessage
+import com.doran.penpal.feign.UserInfoDetail
 import com.doran.penpal.global.ApiResponse
 import com.doran.penpal.global.BaseResponse
 import com.doran.penpal.global.DataResponse
@@ -31,14 +32,16 @@ class PenpalController(
     }
 
     @GetMapping("/list")
-    fun retrievePenpals(@RequestBody req: PenpalListRequest, pageable: Pageable): ResponseEntity<DataResponse<PenpalListResponse>>{
-        val result = penpalService.retrievePenpals(req.userId, pageable)
+    fun retrievePenpals(@AuthenticationPrincipal userDetails: CustomUserDetails, pageable: Pageable): ResponseEntity<DataResponse<PenpalListResponse>>{
+        val userId = UUID.fromString(userDetails.userId)
+        val result = penpalService.retrievePenpals(userId = userId, pageable = pageable)
         val pageInfo = createPageInfo(result)
 
         val penpals: List<PenpalInfo> = if (!result.isEmpty) {
             result.content.map { item ->
-                val opponentId = item.participantIds.firstOrNull { it != req.userId }
-                PenpalInfo(id = item.id, opponentId = opponentId)
+                val opponentId = item.participantIds.first { it != userId }
+                val opponentInfo = penpalService.retrieveUserInfo(opponentId)
+                PenpalInfo(id = item.id, opponentInfo = opponentInfo)
             }
         } else {
             emptyList()
@@ -49,13 +52,14 @@ class PenpalController(
     }
 
     @GetMapping("/messages")
-    fun retrieveMessages(@Valid @RequestBody req: RetrieveMesssageRequest, pageable: Pageable): ResponseEntity<DataResponse<RetrieveMessageResponse>> {
-        val result = penpalService.retrieveMessages(penpalId = req.penpalId, pageable = pageable)
+    fun retrieveMessages(@AuthenticationPrincipal userDetails: CustomUserDetails, @Valid @RequestBody req: RetrieveMesssageRequest, pageable: Pageable): ResponseEntity<DataResponse<RetrieveMessageResponse>> {
+        val userId = UUID.fromString(userDetails.userId)
+        val result = penpalService.retrieveMessages(userId = UUID.fromString(userDetails.userId), penpalId = req.penpalId, pageable = pageable)
         val pageInfo = createPageInfo(result)
 
         val messages: List<PenpalMesssageInfo> = if (!result.isEmpty) {
             result.content.map { it ->
-                PenpalMesssageInfo(id = it.id, content = it.content, sentAt = it.createdAt, status = it.status.toString(), isFromUser = (it.sendFrom == req.userId))
+                PenpalMesssageInfo(id = it.id, content = it.content, sentAt = it.createdAt, status = it.status.toString(), isFromUser = (it.sendFrom == userId))
             }
         } else {
             emptyList()
@@ -66,8 +70,8 @@ class PenpalController(
     }
 
     @PatchMapping("/{penpalId}/switch")
-    fun switchController(@PathVariable penpalId: UUID): ResponseEntity<BaseResponse>{
-        val switchResult = penpalService.inactivePenpal(penpalId = penpalId)
+    fun switchController(@AuthenticationPrincipal userDetails: CustomUserDetails, @PathVariable penpalId: UUID): ResponseEntity<BaseResponse>{
+        val switchResult = penpalService.inactivePenpal(userId = UUID.fromString(userDetails.userId), penpalId = penpalId)
         if (!switchResult.isActive) {
             return ApiResponse.successWithNoData()
         } else {
@@ -76,8 +80,8 @@ class PenpalController(
     }
 
     @DeleteMapping("/{penpalId}/close")
-    fun closeController(@PathVariable penpalId: UUID): ResponseEntity<BaseResponse>{
-        val switchResult = penpalService.closePenpal(penpalId = penpalId)
+    fun closeController(@AuthenticationPrincipal userDetails: CustomUserDetails, @PathVariable penpalId: UUID): ResponseEntity<BaseResponse>{
+        val switchResult = penpalService.closePenpal(userId = UUID.fromString(userDetails.userId), penpalId = penpalId)
         if (switchResult) {
             return ApiResponse.successWithNoData()
         } else {
@@ -98,10 +102,6 @@ data class SendToResponse (
     val sentAt: LocalDateTime
 )
 
-data class PenpalListRequest ( // TODO: Spring Security 구현 시 삭제
-    val userId: UUID
-)
-
 data class PenpalListResponse (
     val penpals: List<PenpalInfo>,
     val page: PageInfo
@@ -109,7 +109,7 @@ data class PenpalListResponse (
 
 data class PenpalInfo (
     val id: UUID,
-    val opponentId: UUID? // TODO: Auth Service와 연결 후 opponentInfo로 변경하기
+    val opponentInfo: UserInfoDetail?
 )
 
 data class PageInfo (
@@ -121,8 +121,7 @@ data class PageInfo (
 
 data class RetrieveMesssageRequest (
     @field:NotNull(message = "조회하고자 하는 펜팔의 ID를 지정해주세요.")
-    val penpalId: UUID,
-    val userId: UUID, // TODO: Spring Security 구현 시 삭제
+    val penpalId: UUID
 )
 
 data class RetrieveMessageResponse (

@@ -3,6 +3,7 @@ package com.doran.penpal
 import com.doran.penpal.entity.Penpal
 import com.doran.penpal.entity.PenpalMessage
 import com.doran.penpal.feign.UserIdData
+import com.doran.penpal.feign.UserInfoDetail
 import com.doran.penpal.feign.UserServiceFeignClient
 import com.doran.penpal.global.DataResponse
 import com.doran.penpal.global.ErrorCode
@@ -24,10 +25,7 @@ class PenpalService(
     @Transactional
     fun createMessage(req: SendToRequest, sendFrom: UUID) : PenpalMessage {
         // TODO: req.sendTo를 ID로 갖는 사용자의 존재 여부 확인 필요
-        // 새 메세지 선언
-        val newPenpalMessage: PenpalMessage
-
-        newPenpalMessage = if (req.sendTo != null) { // 1. 수신인 지정 펜팔
+        val newPenpalMessage: PenpalMessage = if (req.sendTo != null) { // 1. 수신인 지정 펜팔
             sendPrivate(sendFrom = sendFrom, sendTo = req.sendTo!!, content = req.content)
 
         } else { // 2. 랜덤 펜팔
@@ -91,13 +89,24 @@ class PenpalService(
     }
 
     @Transactional
+    fun retrieveUserInfo(userId: UUID): UserInfoDetail? {
+        val response: DataResponse<UserInfoDetail> = userServiceClient.getUserInfo(userId = userId)
+        return response.data
+    }
+
+    @Transactional
     fun retrievePenpals(userId: UUID, pageable: Pageable): Page<Penpal> {
         return penpalRepository.findPenpalByParticipantIdsContaining(userId, pageable)
     }
 
     @Transactional
-    fun retrieveMessages(penpalId:UUID, pageable: Pageable): Page<PenpalMessage> {
-        val penpal = penpalRepository.findById(penpalId).orElseThrow { CustomException(ErrorCode.PENPAL_NOT_FOUND) } // TODO: 요청한 유저의 펜팔인지 확인
+    fun retrieveMessages(userId: UUID, penpalId:UUID, pageable: Pageable): Page<PenpalMessage> {
+        val penpal = penpalRepository.findById(penpalId).orElseThrow { CustomException(ErrorCode.PENPAL_NOT_FOUND) }
+
+        if (userId !in penpal.participantIds) {
+            throw CustomException(ErrorCode.NOT_YOUR_PENPAL)
+        }
+
         val messages = penpalMessageRepository.findAllByPenpal(penpal, pageable)
 
         if (messages.last().status == MessageStatus(status = Status.SENT)) {
@@ -108,14 +117,23 @@ class PenpalService(
     }
 
     @Transactional
-    fun inactivePenpal(penpalId: UUID): Penpal {
-        val penpal = penpalRepository.findById(penpalId).orElseThrow { CustomException(ErrorCode.PENPAL_NOT_FOUND) } // TODO: 요청한 유저의 펜팔인지 확인
+    fun inactivePenpal(userId: UUID, penpalId: UUID): Penpal {
+        val penpal = penpalRepository.findById(penpalId).orElseThrow { CustomException(ErrorCode.PENPAL_NOT_FOUND) }
+
+        if (userId !in penpal.participantIds) {
+            throw CustomException(ErrorCode.NOT_YOUR_PENPAL)
+        }
+
         return penpal.beFriend()
     }
 
     @Transactional
-    fun closePenpal(penpalId: UUID): Boolean {
-        val penpal = penpalRepository.findById(penpalId).orElseThrow { CustomException(ErrorCode.PENPAL_NOT_FOUND) } // TODO: 요청한 유저의 펜팔인지 확인
+    fun closePenpal(userId: UUID, penpalId: UUID): Boolean {
+        val penpal = penpalRepository.findById(penpalId).orElseThrow { CustomException(ErrorCode.PENPAL_NOT_FOUND) }
+
+        if (userId !in penpal.participantIds) {
+            throw CustomException(ErrorCode.NOT_YOUR_PENPAL)
+        }
 
         val messageDeleteResult = penpalMessageRepository.deleteAllByPenpal(penpal)
         val penpalDeleteResult = penpalRepository.deleteById(penpalId)
