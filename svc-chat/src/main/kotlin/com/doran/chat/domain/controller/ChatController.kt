@@ -8,11 +8,9 @@ import org.springframework.messaging.handler.annotation.MessageMapping
 import org.springframework.messaging.handler.annotation.Payload
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor
 import org.springframework.messaging.simp.SimpMessagingTemplate
-import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.stereotype.Controller
 import java.time.LocalDateTime
 import java.util.*
-import kotlin.jvm.optionals.getOrNull
 
 @Controller
 class ChatController(
@@ -43,7 +41,21 @@ class ChatController(
 
         val chatRoom = chatRoomRepository.findById(message.chatRoomId).orElse(null)
         if (chatRoom != null && CHATBOT_USER_ID in chatRoom.participantIds) {
-            val botResponseContent = chatBotService.getChatbotResponse(userId, message.content)
+
+            val userJwt = headerAccessor.sessionAttributes?.get("user_jwt") as? String
+
+            if (userJwt == null) {
+                val errorMsg = chatService.saveMessage(
+                    message.chatRoomId,
+                    CHATBOT_USER_ID,
+                    "오류: 사용자 인증 정보를 찾을 수 없어 봇 기능을 실행할 수 없습니다.",
+                    LocalDateTime.now()
+                )
+                messagingTemplate.convertAndSend("/topic/chat/room/${message.chatRoomId}", errorMsg)
+                return
+            }
+
+            val botResponseContent = chatBotService.getChatbotResponse(userId, message.content, userJwt)
 
             val savedBotMessage = chatService.saveMessage(
                 message.chatRoomId,

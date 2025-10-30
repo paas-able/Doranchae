@@ -25,7 +25,10 @@ class StompAuthChannelInterceptor(
                 try {
                     val authentication = jwtTokenProvider.getAuthentication(token)
                     val userId = authentication.principal as UUID
+
                     accessor.sessionAttributes?.put("userId", userId)
+                    accessor.sessionAttributes?.put("user_jwt", token)
+
                     accessor.user = authentication
 
                 } catch (e: Exception) {

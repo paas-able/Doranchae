@@ -4,7 +4,7 @@ import com.doran.chat.global.jwt.StompAuthChannelInterceptor
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Lazy
-import org.springframework.messaging.simp.config.ChannelRegistration // 👈 임포트 추가
+import org.springframework.messaging.simp.config.ChannelRegistration
 import org.springframework.messaging.simp.config.MessageBrokerRegistry
 import org.springframework.scheduling.TaskScheduler
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker
