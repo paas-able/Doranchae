@@ -17,6 +17,7 @@
     "next-pwa": "^5.6.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",
+    "react-router-dom": "^7.9.5",
     "swr": "^2.3.6"
   },
   "devDependencies": {

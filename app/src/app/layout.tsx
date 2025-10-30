@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import LayoutWrapper from "@components/LayoutWrapper"; 
+import LayoutWrapper from "@components/LayoutWrapper";
+import BottomNav from "@components/NavBar";
+import Header from "@components/Header";
 
 export const metadata: Metadata = {
   title: "도란채",
@@ -16,12 +18,12 @@ export default function RootLayout({
 
   return (
     <html lang="en">
-      <body className="mx-auto w-full max-w-[430px] flex flex-col min-h-screen">
-        
-        <LayoutWrapper>
-          {children}
-        </LayoutWrapper>
-        
+      <body>
+        <Header/>
+        <div className={"pt-[60px]"}>
+            {children}
+        </div>
+        <BottomNav/>
       </body>
     </html>
   );
