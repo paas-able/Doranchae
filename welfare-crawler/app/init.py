@@ -1,7 +1,7 @@
 import os
 
 # 환경 변수에서 민감 정보 로드 (API 키는 로컬 테스트용 더미 키)
-API_KEY = os.getenv("WELFARE_API_KEY", "95572ee30b74ca30cb0ebf98d2c26ee9f9aa322f606b5ccb7f68e21deae7e784") 
+API_KEY = os.getenv("WELFARE_API_KEY") 
 
 # API 요청 파라미터 기본 설정 유지
 DEFAULT_LIFE = "005,006"        
