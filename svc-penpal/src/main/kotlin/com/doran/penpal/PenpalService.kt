@@ -2,9 +2,9 @@ package com.doran.penpal
 
 import com.doran.penpal.entity.Penpal
 import com.doran.penpal.entity.PenpalMessage
-import com.doran.penpal.feign.UserIdData
-import com.doran.penpal.feign.UserInfoDetail
 import com.doran.penpal.feign.UserServiceFeignClient
+import com.doran.penpal.feign.dto.UserIdData
+import com.doran.penpal.feign.dto.UserInfoDetail
 import com.doran.penpal.global.DataResponse
 import com.doran.penpal.global.ErrorCode
 import com.doran.penpal.global.exception.CustomException
