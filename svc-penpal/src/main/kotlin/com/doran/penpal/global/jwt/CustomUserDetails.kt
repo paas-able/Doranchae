@@ -1,4 +1,4 @@
-package com.doran.penpal.global.jwt.auth
+package com.doran.penpal.global.jwt
 
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.userdetails.User
