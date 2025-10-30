@@ -14,7 +14,7 @@ import javax.crypto.SecretKey
 
 @Component
 class JwtTokenProvider(
-    @Value ("\${JWT_SECRET: \${jwt.secret}}") private val secret: String
+    @Value ("\${JWT_SECRET:\${jwt.secret}}") private val secret: String
 ) {
     private val key: SecretKey = Keys.hmacShaKeyFor(Base64.getDecoder().decode(secret))
 
