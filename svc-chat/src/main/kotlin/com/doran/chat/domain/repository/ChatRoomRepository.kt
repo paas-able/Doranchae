@@ -25,4 +25,11 @@ interface ChatRoomRepository : JpaRepository<ChatRoom, UUID> {
         status: ChatRoom.ChatStatus,
         pageable: Pageable
     ): Page<ChatRoom>
+
+    fun findByParticipantIdsContainingAndParticipantIdsNotContainingAndStatus(
+        userId: UUID,
+        chatbotId: UUID,
+        status: ChatRoom.ChatStatus,
+        pageable: Pageable
+    ): Page<ChatRoom>
 }

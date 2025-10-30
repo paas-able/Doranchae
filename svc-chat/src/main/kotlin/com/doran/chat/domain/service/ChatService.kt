@@ -53,8 +53,9 @@ class ChatService(
     }
 
     fun getChatRoomList(userId: UUID, pageable: Pageable): ChatRoomListResponse {
-        val chatRoomPage: Page<ChatRoom> = chatRoomRepository.findByParticipantIdsContainingAndStatus(
+        val chatRoomPage: Page<ChatRoom> = chatRoomRepository.findByParticipantIdsContainingAndParticipantIdsNotContainingAndStatus(
             userId,
+            CHATBOT_USER_ID,
             ChatRoom.ChatStatus.ACTIVATE,
             pageable
         )
