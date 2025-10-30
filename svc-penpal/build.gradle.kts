@@ -6,6 +6,7 @@ plugins {
 	kotlin("plugin.jpa") version "1.9.25"
 }
 
+extra["springCloudVersion"] = "2025.0.0"
 group = "com.doran"
 version = "0.0.1-SNAPSHOT"
 description = "Demo project for Spring Boot"
@@ -21,6 +22,16 @@ repositories {
 }
 
 dependencies {
+	// Spring Security, JWT
+	implementation("org.springframework.boot:spring-boot-starter-security")
+	implementation("io.jsonwebtoken:jjwt-api:0.11.5")
+	implementation("io.jsonwebtoken:jjwt-impl:0.11.5")
+	implementation("io.jsonwebtoken:jjwt-jackson:0.11.5")
+
+	// Feign
+	implementation("org.springframework.cloud:spring-cloud-starter-openfeign")
+	implementation("org.springframework.cloud:spring-cloud-starter-loadbalancer")
+
 	implementation("org.springframework.boot:spring-boot-starter-actuator")
 	implementation("org.springframework.boot:spring-boot-starter-validation")
 	implementation("org.springframework.boot:spring-boot-starter-web")
@@ -34,6 +45,13 @@ dependencies {
 	runtimeOnly("com.mysql:mysql-connector-j")
 	implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
+}
+
+//Feign Client
+dependencyManagement {
+	imports {
+		mavenBom("org.springframework.cloud:spring-cloud-dependencies:${property("springCloudVersion")}")
+	}
 }
 
 kotlin {

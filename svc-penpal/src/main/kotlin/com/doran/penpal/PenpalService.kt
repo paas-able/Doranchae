@@ -2,6 +2,9 @@ package com.doran.penpal
 
 import com.doran.penpal.entity.Penpal
 import com.doran.penpal.entity.PenpalMessage
+import com.doran.penpal.feign.UserIdData
+import com.doran.penpal.feign.UserServiceFeignClient
+import com.doran.penpal.global.DataResponse
 import com.doran.penpal.global.ErrorCode
 import com.doran.penpal.global.exception.CustomException
 import com.doran.penpal.repository.PenpalMessageRepository
@@ -15,43 +18,74 @@ import java.util.*
 @Service
 class PenpalService(
     private val penpalMessageRepository: PenpalMessageRepository,
-    private val penpalRepository: PenpalRepository
+    private val penpalRepository: PenpalRepository,
+    private val userServiceClient: UserServiceFeignClient
 ) {
     @Transactional
-    fun createMessage(req: SendToRequest) : PenpalMessage {
-
+    fun createMessage(req: SendToRequest, sendFrom: UUID) : PenpalMessage {
         // TODO: req.sendTo를 ID로 갖는 사용자의 존재 여부 확인 필요
-
         // 새 메세지 선언
         val newPenpalMessage: PenpalMessage
 
-        // 해당 펜팔의 유무 확인
-        val exPenpal = findExistingPenpal(sendFrom = req.sendFrom, sendTo = req.sendTo)
+        newPenpalMessage = if (req.sendTo != null) { // 1. 수신인 지정 펜팔
+            sendPrivate(sendFrom = sendFrom, sendTo = req.sendTo!!, content = req.content)
 
-        newPenpalMessage = if (exPenpal != null) {
-            createNewMessage(req = req, exPenpal)
-
-        } else {
-            val newPenpal = createNewPenpal(req = req)
-            createNewMessage(req = req, newPenpal)
+        } else { // 2. 랜덤 펜팔
+            sendRandom(sendFrom = sendFrom, content = req.content)
         }
 
         return newPenpalMessage
     }
 
-    // 왜 private엔 @Transactional이 못 붙을까?
+    private fun sendPrivate(sendFrom: UUID, sendTo: UUID, content: String): PenpalMessage {
+        // 1. 해당 펜팔 유무 확인
+        val exPenpal = findExistingPenpal(sendFrom = sendFrom, sendTo = sendTo)
+
+        return if (exPenpal != null) { // 2-1. 존재 O -> 메세지만 추가
+            createNewMessage(sendFrom = sendFrom, sendTo = sendTo, content = content, penpal = exPenpal)
+
+        } else { // 2-2. 존재 X -> 새로운 펜팔 생성 후 메세지 추가
+            val newPenpal = createNewPenpal(sendFrom = sendFrom, sendTo = sendTo)
+            createNewMessage(sendFrom = sendFrom, sendTo = sendTo, content = content, penpal = newPenpal)
+        }
+    }
+
+    private fun sendRandom(sendFrom: UUID, content: String): PenpalMessage {
+        // 1. 참여 중인 펜팔 상대방 조회
+        val excludeIdList: MutableList<String> = retrievePenpalFriendList(userId = sendFrom)
+        excludeIdList.add(sendFrom.toString())
+
+        // 2. svc-user에서 랜덤 유저 조회
+        val randomUserId = findRandomUser(excludeIds = excludeIdList)
+
+        // 3. 새로운 펜팔 생성
+        val newPenpal = createNewPenpal(sendFrom = sendFrom, sendTo = randomUserId)
+
+        // 4. 새로운 펜팔 메세지 생성
+        return createNewMessage(sendFrom = sendFrom, sendTo = randomUserId, content = content, penpal = newPenpal)
+    }
+
+    private fun retrievePenpalFriendList(userId: UUID): MutableList<String> {
+        return penpalRepository.findExistingFriendIds(userId)
+    }
+
+    private fun findRandomUser(excludeIds: MutableList<String>): UUID {
+        val response: DataResponse<UserIdData> = userServiceClient.getRandomFriend(excludeIds = excludeIds)
+        return response.data!!.userId
+    }
+
     private fun findExistingPenpal(sendFrom: UUID, sendTo: UUID): Penpal? {
         val participants = setOf(sendFrom, sendTo)
         return penpalRepository.findPenpalByParticipants(participants, 2L).orElse(null)
     }
 
-    private fun createNewMessage(req: SendToRequest, penpal: Penpal): PenpalMessage {
+    private fun createNewMessage(sendFrom: UUID, sendTo: UUID, content: String, penpal: Penpal): PenpalMessage {
         val initialStatus = MessageStatus(status = Status.SENT)
-        val newMessage = PenpalMessage(sendFrom = req.sendFrom, sendTo = req.sendTo, content = req.content, status = initialStatus, penpal = penpal)
+        val newMessage = PenpalMessage(sendFrom = sendFrom, sendTo = sendTo, content = content, status = initialStatus, penpal = penpal)
         return penpalMessageRepository.save(newMessage)
     }
-    private fun createNewPenpal(req: SendToRequest): Penpal {
-        val participants = setOf(req.sendFrom, req.sendTo)
+    private fun createNewPenpal(sendFrom: UUID, sendTo: UUID): Penpal {
+        val participants = setOf(sendFrom, sendTo)
         val newPenpal = Penpal(participantIds = participants)
         return penpalRepository.save(newPenpal)
     }
