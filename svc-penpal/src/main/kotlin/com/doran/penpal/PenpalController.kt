@@ -16,6 +16,7 @@ import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 import java.time.LocalDateTime
 import java.util.UUID
+import org.springframework.security.core.annotation.AuthenticationPrincipal
 
 @RestController
 @RequestMapping("/api/penpal")
