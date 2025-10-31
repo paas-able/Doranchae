@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation'; 
+import { saveTempSignupData, getTempSignupData } from '@/libs/tempSignupData';
 
 // --- 색상 변수 ---
 const Bg = "#FDFAED";
@@ -23,13 +24,31 @@ const SignupPage = () => {
     const [accessAgreed, setAccessAgreed] = useState(false); 
     const [guardianAgreed, setGuardianAgreed] = useState(false);
 
+    useEffect(() => {
+        const data = getTempSignupData();
+        if (data.userSetting?.termsAgree) {
+            setTermsAgreed(true);
+            setPrivacyAgreed(true); 
+        }
+    }, []);
+
     const handleNext = (e) => {
         e.preventDefault();
-        if (termsAgreed && privacyAgreed) {
-            router.push('/signup/details'); 
-        } else {
+
+        if (!termsAgreed || !privacyAgreed) {
             alert("필수 이용약관에 동의해주세요.");
+            return;
         }
+
+        const userSettingPayload: any = {
+            termsAgree: termsAgreed && privacyAgreed,
+        };
+
+        saveTempSignupData({
+            userSetting: userSettingPayload,
+        });
+
+        router.push('/signup/details');
     };
 
     const handleAllAgree = (e) => {
@@ -60,7 +79,7 @@ const SignupPage = () => {
                 </p>
             </div> 
 
-            {/* [!!] 자식 2: 하단 폼 영역 (새로운 div가 시작됩니다) */}
+            {/* 하단 폼 영역 */}
             <div className="w-full max-w-sm flex flex-col pb-6">
                 <form onSubmit={handleNext} className="w-full flex flex-col">
                     

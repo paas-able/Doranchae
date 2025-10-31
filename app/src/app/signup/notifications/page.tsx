@@ -2,7 +2,8 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image'; // 1. Image 컴포넌트 import
+import Image from 'next/image';
+import { saveTempSignupData, getTempSignupData, clearTempSignupData } from '@/libs/tempSignupData';
 
 // --- 색상 변수 ---
 const Bg = "#FDFAED";
@@ -17,16 +18,57 @@ const MM = "#8B9744";
 const NotificationsPage = () => {
     const router = useRouter();
     
-    // 1. 알림 설정 완료 핸들러
-    const handleFinish = (agreed: boolean) => {
-        console.log("알림 설정 동의:", agreed);
-        // [!!] 모든 회원가입 절차 완료. 로그인 페이지로 이동
-        alert("회원가입이 완료되었습니다!");
-        router.push('/login'); 
+    // 1. 알림 설정 동의 상태 (기본값: 네)
+    const [isAgreed, setIsAgreed] = useState(true);
+    const [isLoading, setIsLoading] = useState(false);
+
+    // 2. 최종 제출 핸들러: 모든 데이터 통합 및 API 전송 (디버그 모드)
+    const finalSubmit = async (agreed: boolean) => {
+        setIsLoading(true);
+        setIsAgreed(agreed); // 버튼 클릭에 따라 상태 업데이트
+        
+        // 2-1. 알림 동의 여부 저장 (API 필드명: notificationPush)
+        saveTempSignupData({
+            userSetting: {
+                notificationPush: agreed,
+                // 나머지 약관 동의 상태는 이전 페이지에서 저장되었어야 함
+            }
+        });
+
+        // 2-2. 임시 저장된 모든 회원 정보 불러오기
+        const signupData = getTempSignupData();
+
+        // 2-3. 최종 API 전송 (디버그 모드)
+        console.log("--- DEBUG MODE: 최종 회원가입 API 요청 ---");
+        console.log("API: /api/user/join");
+        console.log("Method: POST");
+        console.log("FINAL PAYLOAD:", JSON.stringify(signupData, null, 2)); // [!!] 통합 데이터 출력
+        console.log("-----------------------------------------");
+        
+        // (네트워크 딜레이 1초 시뮬레이션)
+        await new Promise(resolve => setTimeout(resolve, 1500)); 
+
+        try {
+            // [!!] 2-4. Mocking 결과: 무조건 성공으로 간주
+            console.log("DEBUG: 서버 응답 - 200 OK");
+
+            // 임시 저장 데이터 제거
+            clearTempSignupData(); 
+            
+            // 성공 페이지 또는 로그인 페이지로 리디렉션
+            alert(`회원가입이 완료되었습니다! 로그인 페이지로 이동합니다.`);
+            router.push('/login'); 
+
+        } catch (error: any) {
+            console.error("DEBUG: Mocking 중 오류 발생", error);
+            alert(`회원가입 실패: ${error.message || '알 수 없는 오류'}`);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
-        // 1. 페이지 전체 (flex-1 + justify-between)
+        // 1. 페이지 전체
         <div 
             className="mx-auto w-full max-w-[430px] flex flex-col items-center justify-between flex-1 p-4"
             style={{ backgroundColor: Bg }}
@@ -39,9 +81,6 @@ const NotificationsPage = () => {
                     className="w-40 h-40 rounded-full flex items-center justify-center mb-8"
                     style={{ backgroundColor: M2 }} // 임시 배경색
                 >
-                    {/* [!!] 실제 아이콘 이미지가 필요합니다. 
-                       <Image src="/notification-bell.png" alt="알림" width={100} height={100} /> 
-                    */}
                     <span className="text-6xl">🔔</span> 
                 </div>
 
@@ -58,7 +97,7 @@ const NotificationsPage = () => {
             <div className="w-full max-w-sm grid grid-cols-2 gap-3 pb-6">
                 <button 
                     type="button"
-                    onClick={() => handleFinish(false)} // '아니요'
+                    onClick={() => finalSubmit(false)} // '아니요'
                     className="w-full py-3 rounded-lg text-gray-800 font-semibold"
                     style={{ backgroundColor: M5, opacity: 0.7 }} // '아니요'는 약간 연하게
                 >
@@ -66,7 +105,7 @@ const NotificationsPage = () => {
                 </button>
                 <button 
                     type="button"
-                    onClick={() => handleFinish(true)} // '네'
+                    onClick={() => finalSubmit(true)} // '네'
                     className="w-full py-3 rounded-lg text-gray-800 font-semibold"
                     style={{ backgroundColor: M5 }}
                 >
