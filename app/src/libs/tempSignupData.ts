@@ -19,7 +19,7 @@ export interface UserJoinPayload {
         notificationSMS?: boolean; // (API 구조에는 없지만 나중에 확장 가능성 고려)
         notificationNOK?: boolean; // (보호자 알림 동의)
     };
-    nextOfKin?: {
+    NOKInfo?: {
         relationship?: string;
         name?: string;
         phoneNumber?: string;
@@ -46,7 +46,7 @@ export function saveTempSignupData(data: Partial<UserJoinPayload>) {
         userDetail: { ...currentData.userDetail, ...data.userDetail },
         interests: { ...currentData.interests, ...data.interests },
         userSetting: { ...currentData.userSetting, ...data.userSetting },
-        nextOfKin: { ...currentData.nextOfKin, ...data.nextOfKin },
+        nokInfo: { ...currentData.NOKInfo, ...data.NOKInfo },
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(newData));
 }

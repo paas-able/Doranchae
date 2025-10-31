@@ -5,7 +5,6 @@ const ACCESS_TOKEN_COOKIE_NAME = 'accessToken';
 export function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
     
-    return NextResponse.next();
     // 1. JWT 토큰(예: accessToken)이 쿠키에 있는지 확인
     const isAuthenticated = request.cookies.has(ACCESS_TOKEN_COOKIE_NAME); 
     

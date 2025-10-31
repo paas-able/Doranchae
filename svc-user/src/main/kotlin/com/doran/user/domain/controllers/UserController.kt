@@ -40,7 +40,7 @@ class UserController(
     @PostMapping("/join")
     fun join(@Valid @RequestBody req: JoinRequest): ResponseEntity<DataResponse<JoinResponse>> {
         val newUser = userService.createUser(req = req)
-        val newNOK = userService.createNOK(req.nextOfKin, newUser)
+        val newNOK = userService.createNOK(req.NOKInfo, newUser)
         val responseDTO = JoinResponse(newUser.id, newNOK.id!!)
         return ApiResponse.success(responseDTO)
     }

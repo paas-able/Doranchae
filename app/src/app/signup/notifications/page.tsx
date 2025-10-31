@@ -25,43 +25,56 @@ const NotificationsPage = () => {
     // 2. 최종 제출 핸들러: 모든 데이터 통합 및 API 전송 (디버그 모드)
     const finalSubmit = async (agreed: boolean) => {
         setIsLoading(true);
-        setIsAgreed(agreed); // 버튼 클릭에 따라 상태 업데이트
+        setIsAgreed(agreed);
         
-        // 2-1. 알림 동의 여부 저장 (API 필드명: notificationPush)
+        // 1. 알림 동의 여부 저장
         saveTempSignupData({
             userSetting: {
-                notificationPush: agreed,
-                // 나머지 약관 동의 상태는 이전 페이지에서 저장되었어야 함
+                // API 구조에 맞게 notificationPush는 알림 동의 여부로 사용
+                notificationPush: agreed, 
+                termsAgree: true, // 약관 동의는 이미 이전 페이지에서 확인되었으므로 true로 간주
             }
         });
 
-        // 2-2. 임시 저장된 모든 회원 정보 불러오기
         const signupData = getTempSignupData();
-
-        // 2-3. 최종 API 전송 (디버그 모드)
-        console.log("--- DEBUG MODE: 최종 회원가입 API 요청 ---");
-        console.log("API: /api/user/join");
-        console.log("Method: POST");
-        console.log("FINAL PAYLOAD:", JSON.stringify(signupData, null, 2)); // [!!] 통합 데이터 출력
-        console.log("-----------------------------------------");
         
-        // (네트워크 딜레이 1초 시뮬레이션)
-        await new Promise(resolve => setTimeout(resolve, 1500)); 
-
+        // [!!] 2. 실제 API 통신 코드
         try {
-            // [!!] 2-4. Mocking 결과: 무조건 성공으로 간주
-            console.log("DEBUG: 서버 응답 - 200 OK");
 
-            // 임시 저장 데이터 제거
-            clearTempSignupData(); 
+            const finalPayload = {
+                ...signupData,
+            };
+
+            console.log("--- FINAL API REQUEST (JOIN) ---");
+            console.log("Endpoint: /api/user/join");
+            console.log("Payload:", finalPayload);
+            console.log("------------------------------");
+
+            const response = await fetch('/api/user/join', { 
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(finalPayload),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || '회원가입에 실패했습니다.');
+            }
+
+            // 2-2. 성공 시 처리
+            console.log("API Success: 회원가입 완료.");
             
-            // 성공 페이지 또는 로그인 페이지로 리디렉션
-            alert(`회원가입이 완료되었습니다! 로그인 페이지로 이동합니다.`);
+            clearTempSignupData(); // 임시 저장 데이터 제거
+            
+            alert("회원가입이 완료되었습니다! 로그인 페이지로 이동합니다.");
             router.push('/login'); 
 
-        } catch (error: any) {
-            console.error("DEBUG: Mocking 중 오류 발생", error);
-            alert(`회원가입 실패: ${error.message || '알 수 없는 오류'}`);
+        } catch (error) { 
+            const errorMessage = (error instanceof Error) ? error.message : '알 수 없는 오류'; 
+            console.error("Error during signup:", errorMessage);
+            alert(`회원가입 실패: ${errorMessage}`);
         } finally {
             setIsLoading(false);
         }

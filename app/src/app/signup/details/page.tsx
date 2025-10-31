@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { saveTempSignupData, getTempSignupData } from '@/libs/tempSignupData';
+import { saveTempSignupData, getTempSignupData, UserJoinPayload } from '@/libs/tempSignupData';
 
 // --- 색상 변수 ---
 const Bg = "#FDFAED";
@@ -13,6 +13,13 @@ const M4 = "#EAEDCC";
 const M5 = "#CED5B2";
 const MM = "#8B9744";
 // ---------------------
+interface CheckLoginIdResponse {
+    isAvailable: boolean;
+    message: string;
+}
+interface ApiResponse<T> {
+    data: T;
+}
 
 const SignupDetailsPage = () => {
     const router = useRouter();
@@ -45,26 +52,56 @@ const SignupDetailsPage = () => {
     }, []);
 
     const handleCheckId = async () => {
-        setIsLoading(true);
-        // [1단계: 요청 기록]
-        console.log("--- DEBUG MODE: API 요청 ---");
-        console.log("API: 아이디 중복 확인 | Body:", JSON.stringify({ userId: id }));
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        // --- 시나리오 1: 아이디 사용 가능 ---
-        const mockResponse = { isSuccess: true, message: "사용 가능한 아이디입니다.", data: { isAvailable: true } };
-        
-        if (mockResponse.data.isAvailable) {
-            alert(mockResponse.message);
-            setIdError('');
-            setIsIdChecked(true);
-        } else {
-            // (시나리오 2 테스트 시)
-            alert(mockResponse.message); 
-            setIdError(mockResponse.message);
-            setIsIdChecked(false);
+        if (!id) {
+            setIdError("아이디를 입력해주세요.");
+            return;
         }
-        setIsLoading(false);
+
+        setIsLoading(true);
+        setIdError("");
+
+        // --- DEBUG: 요청 기록 ---
+        console.log("--- API REQUEST (Check ID) ---");
+        console.log("Endpoint: /api/user/check-login-id");
+        console.log("Body:", JSON.stringify({ loginId: id }));
+        console.log("----------------------------");
+
+        try {
+            const response = await fetch('/api/user/check-login-id', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ loginId: id }),
+            });
+            
+            // 응답 데이터 구조 (DataResponse<CheckLoginIdResponse>) 가정
+            const apiResponse: ApiResponse<CheckLoginIdResponse> = await response.json(); 
+            const result = apiResponse.data;
+            
+            if (response.ok && result.isAvailable) {
+                // 2. 성공: 사용 가능한 아이디
+                alert("사용 가능한 아이디입니다.");
+                setIsIdChecked(true);
+                setIdError('');
+            } else if (response.ok && !result.isAvailable) {
+                // 3. 실패: 중복된 아이디
+                alert(result.message);
+                setIsIdChecked(false);
+                setIdError(result.message);
+            } else {
+                // 4. API 자체 오류 (4xx, 5xx)
+                throw new Error(result.message || "서버 통신 오류가 발생했습니다.");
+            }
+
+        } catch (error: unknown) { 
+            const errorMessage = (error instanceof Error) ? error.message : "ID 체크 중 알 수 없는 오류 발생";
+            console.error("ID 체크 API 오류:", errorMessage);
+            setIdError(errorMessage);
+            setIsIdChecked(false);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const handleAuthConfirm = () => {
@@ -80,7 +117,7 @@ const SignupDetailsPage = () => {
         }
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
 
         if (!isIdChecked) {
@@ -97,15 +134,27 @@ const SignupDetailsPage = () => {
             return;
         }
         
-        // 4. 데이터 저장
+        const cleanedBirthdate = birthdate.replace(/[^0-9]/g, '');
+        
+        // YYYY-MM-DD 형태로 재구성: 2000-12-11
+        let formattedBirthdate = '';
+        if (cleanedBirthdate.length === 8) {
+            formattedBirthdate = `${cleanedBirthdate.substring(0, 4)}-${cleanedBirthdate.substring(4, 6)}-${cleanedBirthdate.substring(6, 8)}`;
+        } else {
+            alert("생년월일 형식이 올바르지 않습니다 (YYYYMMDD).");
+            return;
+        }
+
+        // 2. 데이터 저장
         saveTempSignupData({
             loginId: id,
             password: password,
+            nickname: name,
             userDetail: {
                 name: name,
-                birthDate: birthdate.replace(/\s\/\s/g, '-'), // YYYY / MM / DD -> YYYY-MM-DD
+                birthDate: formattedBirthdate, 
                 phoneNumber: phone.replace(/\s-\s/g, ''),
-                gender: gender as '남자' | '여자', 
+                gender: gender || undefined, 
             }
         });
 

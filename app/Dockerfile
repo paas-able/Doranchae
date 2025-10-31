@@ -2,7 +2,8 @@
 FROM node:20 AS deps
 WORKDIR /usr/src/app
 COPY package*.json ./
-RUN npm ci
+RUN npm install
+RUN npm install --save-dev @types/minimatch
 
 # ---------- build ----------
 FROM node:20 AS build

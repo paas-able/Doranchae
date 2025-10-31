@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { saveTempSignupData, getTempSignupData } from '@/libs/tempSignupData';
+import { saveTempSignupData, getTempSignupData, UserJoinPayload } from '@/libs/tempSignupData';
 
 // --- 색상 변수 ---
 const Bg = "#FDFAED";
@@ -21,6 +21,9 @@ const TOPICS = [
     '연예', '커피', '자기계발', '독서',
     '반려동물', '요리', '심리', '역사'
 ];
+
+type InterestsPayload = UserJoinPayload['interests'];
+
 const InterestsPage = () => {
     const router = useRouter();
     const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
@@ -46,15 +49,23 @@ const InterestsPage = () => {
             return;
         }
 
-        const interestsPayload: { [key: string]: string } = {};
+        // 1. 관심사 데이터 포맷팅
+        const interestsPayload: Partial<InterestsPayload> = {};
+        
+        // 2. 선택된 주제 3개를 포맷에 맞게 할당
         selectedTopics.slice(0, 3).forEach((topic, index) => {
-            interestsPayload[`interest${index + 1}`] = topic; 
+            // [!!] 3. 인덱스를 사용하여 키를 안전하게 접근 (타입스크립트 오류 방지)
+            const key = `interest${index + 1}` as keyof InterestsPayload;
+
+            (interestsPayload as Record<string, string>)[key as string] = topic; 
+        
         });
 
         console.log("DEBUG: 관심사 저장", interestsPayload);
         
+        // 4. 안전하게 저장
         saveTempSignupData({
-            interests: interestsPayload as any
+            interests: interestsPayload as InterestsPayload 
         });
 
         // 다음 페이지로 이동
