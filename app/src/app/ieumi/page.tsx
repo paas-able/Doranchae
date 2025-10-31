@@ -81,7 +81,7 @@ const IeumiPage = () => {
         const setupChatRoom = async () => {
             let roomId: string | null = null;
             try {
-                const response = await axios.get("http://chat:8084/api/chat/bot", {
+                const response = await axios.get("/api/chat/bot", {
                     headers: { Authorization: `Bearer ${jwtToken}` },
                 });
                 roomId = response.data.data;
@@ -89,7 +89,7 @@ const IeumiPage = () => {
                 console.log("기존 채팅방 없음. 새로 생성합니다.");
                 try {
                     const createResponse = await axios.post(
-                        "http://chat:8084/api/chat/room",
+                        "api/chat/room",
                         { opponentId: BOT_USER_ID },
                         { headers: { Authorization: `Bearer ${jwtToken}` } }
                     );
@@ -133,7 +133,7 @@ const IeumiPage = () => {
             };
 
             const response = await axios.post(
-                "http://chat:8084/api/chat/room/messages",
+                "/api/chat/room/messages",
                 requestBody,
                 {
                     headers: { Authorization: `Bearer ${jwtToken}` },
@@ -181,7 +181,7 @@ const IeumiPage = () => {
         }
 
         const stompClient = new Client({
-            webSocketFactory: () => new SockJS("http://chat:8084/ws-chat"),
+            webSocketFactory: () => new SockJS("/ws-chat"),
             connectHeaders: { Authorization: `Bearer ${jwtToken}` },
             debug: (str) => console.log(new Date(), str),
 
