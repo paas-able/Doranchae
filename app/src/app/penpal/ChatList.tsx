@@ -4,9 +4,11 @@ import useSWRInfinite from 'swr/infinite'
 import { useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 
+// 1. ChatRoom 타입에 opponentName 추가
 type ChatRoom = {
     id: string;
     opponentId: string;
+    opponentName: string; // API 응답에 맞춰 추가
 }
 
 type PageInfo = {
@@ -28,10 +30,9 @@ type ApiChatResponse = {
     data: ChatRoomData;
 }
 
-// 쿠키에서 JWT 가져오기
 const getAuthTokenFromCookie = (): string | null => {
     if (typeof document !== 'undefined') {
-        const match = document.cookie.match(new RegExp('(^| )jwt_token=([^;]+)'))
+        const match = document.cookie.match(new RegExp('(^| )jwt=([^;]+)'))
         if (match) return match[2]
     }
     return null
@@ -61,7 +62,7 @@ export function ChatList() {
 
     const getKey = (pageIndex: number, previousPageData: ApiChatResponse | null) => {
         if (previousPageData && previousPageData.data.page.isLast) return null
-        return `/api/chat/list?page=${pageIndex}`
+        return `http://localhost:8080/api/chat/list?page=${pageIndex}`
     }
 
     const { data, error, isLoading, size, setSize } = useSWRInfinite<ApiChatResponse>(
@@ -101,16 +102,30 @@ export function ChatList() {
 
     return (
         <div>
-            <h2 className="text-sm text-gray-500 mb-4">채팅 목록</h2>
-            <div className="space-y-4">
+            {/* 2. 이미지와 유사하게 헤더 텍스트 수정 (카운트는 일단 제외) */}
+            <h2 className="text-sm text-gray-500 mb-2 px-4">
+                채팅 목록 ({chatRooms.length} / 1000)
+            </h2>
+
+            {/* 3. 리스트 UI 구성을 위해 'divide-y' 사용 */}
+            <div className="divide-y divide-gray-200">
                 {chatRooms.map((room) => (
+                    // 4. 요청한 이미지 레이아웃으로 JSX 수정
                     <div
                         key={room.id}
-                        className="p-4 border rounded-lg shadow-sm cursor-pointer"
-                        onClick={() => router.push(`/chat/${room.id}`)} // 클릭 시 채팅방 페이지 이동
+                        className="flex items-center p-4 space-x-3 cursor-pointer hover:bg-gray-100"
+                        onClick={() => router.push(`penpal/chat/${room.id}`)}
                     >
-                        <p className="font-semibold">Chat Room: {room.id}</p>
-                        <p className="text-gray-600">Opponent: {room.opponentId}</p>
+                        {/* 프로필 사진 (이모지) */}
+                        <span className="text-4xl">😊</span>
+
+                        {/* 이름 (flex-1로 남은 공간 차지, min-w-0와 truncate로 긴 이름 처리) */}
+                        <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-lg truncate">
+                                {room.opponentName}
+                            </p>
+                            {/* 요청에 따라 메시지와 시간은 표시하지 않습니다. */}
+                        </div>
                     </div>
                 ))}
 
@@ -122,10 +137,6 @@ export function ChatList() {
 
                 {!isLoading && chatRooms.length === 0 && (
                     <div className="text-center text-gray-400 py-4">채팅방이 없습니다.</div>
-                )}
-
-                {isLast && chatRooms.length > 0 && (
-                    <div className="text-center text-gray-400 py-4">마지막 채팅방입니다.</div>
                 )}
             </div>
         </div>
