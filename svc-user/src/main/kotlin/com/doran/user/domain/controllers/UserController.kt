@@ -40,9 +40,16 @@ class UserController(
     @PostMapping("/join")
     fun join(@Valid @RequestBody req: JoinRequest): ResponseEntity<DataResponse<JoinResponse>> {
         val newUser = userService.createUser(req = req)
-        val newNOK = userService.createNOK(req.nextOfKin, newUser)
+        val newNOK = userService.createNOK(req.NOKInfo, newUser)
         val responseDTO = JoinResponse(newUser.id, newNOK.id!!)
         return ApiResponse.success(responseDTO)
+    }
+    @PostMapping("/check-login-id")
+    fun checkLoginId(@Valid @RequestBody req: CheckLoginIdRequest): ResponseEntity<DataResponse<CheckLoginIdResponse>> {
+        val isAvailable = userService.checkLoginIdAvailability(req.loginId)
+        val message = if (isAvailable) "사용 가능한 아이디입니다." else "이미 사용 중인 아이디입니다."
+        
+        return ApiResponse.success(CheckLoginIdResponse(isAvailable, message))
     }
 
     @PostMapping("/login")
@@ -70,13 +77,23 @@ class UserController(
             .collect(Collectors.toList())
 
         val userAge = LocalDateTime.now().year - user.userDetail.birthDate.year + 1
-
+        
+        // 보호자 정보 조회
+        val nok = userService.getNokByUserId(user.id)
+        val nokInfoResponse = nok?.let {
+            NokInfoResponse(
+                relationship = it.relationship,
+                name = it.name,
+                phoneNumber = it.phoneNumber
+            )
+        }
         val responseDto = UserInfoResponse(
             userId = user.id,
             nickname = user.nickname,
             age = userAge,
             gender = user.userDetail.gender.code,
-            interests = userInterestList
+            interests = userInterestList,
+            nokInfo = nokInfoResponse
         )
         return ApiResponse.success(responseDto)
     }
@@ -85,8 +102,17 @@ class UserController(
     fun getMyInfo(authentication: Authentication): ResponseEntity<DataResponse<UserInfoResponse>> {
         
         val principal = authentication.principal as CustomUserDetails
-        
         val user = principal.user 
+        
+        val nok = userService.getNokByUserId(user.id)
+        
+        val nokInfoResponse = nok?.let {
+            NokInfoResponse(
+                relationship = it.relationship,
+                name = it.name,
+                phoneNumber = it.phoneNumber
+            )
+        }
 
         val userInterestList = user.userDetail.interests.interests
             .stream()
@@ -99,7 +125,8 @@ class UserController(
             nickname = user.nickname,
             age = userAge,
             gender = user.userDetail.gender.code,
-            interests = userInterestList
+            interests = userInterestList,
+            nokInfo = nokInfoResponse
         )
         return ApiResponse.success(responseDto)
     }

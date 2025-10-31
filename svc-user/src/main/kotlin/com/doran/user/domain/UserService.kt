@@ -30,6 +30,16 @@ class UserService(
 ) : UserDetailsService {
 
     @Transactional
+    fun checkLoginIdAvailability(loginId: String): Boolean {
+        // findByLoginId 결과가 null이면 (사용자가 없으면) true 반환
+        return userRepository.findByLoginId(loginId) == null
+    }
+
+    fun getNokByUserId(userId: UUID): NOK? {
+        return nokRepository.findById(userId).orElse(null)
+    }
+
+    @Transactional
     fun createUser(req: JoinRequest) : User {
         
         // 중복 아이디 검사
