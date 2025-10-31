@@ -93,7 +93,7 @@ class UserController(
             age = userAge,
             gender = user.userDetail.gender.code,
             interests = userInterestList,
-            nokInfo = nokInfoResponse
+            NOKInfo = nokInfoResponse
         )
         return ApiResponse.success(responseDto)
     }
@@ -126,7 +126,7 @@ class UserController(
             age = userAge,
             gender = user.userDetail.gender.code,
             interests = userInterestList,
-            nokInfo = nokInfoResponse
+            NOKInfo = nokInfoResponse
         )
         return ApiResponse.success(responseDto)
     }

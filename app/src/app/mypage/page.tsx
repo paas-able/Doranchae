@@ -25,7 +25,7 @@ interface UserInfoResponse {
     age: number;
     gender: string;
     interests: string[];
-    nokInfo: NokInfoResponse | null; 
+    NOKInfo: NokInfoResponse | null; 
 }
 
 const MyPage = () => {
@@ -101,7 +101,7 @@ const MyPage = () => {
     }
     
     // 8. 데이터 바인딩
-    const { nickname, interests, gender, age, nokInfo } = userInfo;
+    const { nickname, interests, gender, age, NOKInfo } = userInfo;
 
     // 성별 표시 텍스트
     const genderText = gender === '남자' ? '남성' : gender === '여자' ? '여성' : '선택안함';
@@ -152,9 +152,9 @@ const MyPage = () => {
                             </div>
                             <div>
                                 {/* [!!] 4. 보호자 정보 바인딩 */}
-                                <p className="text-gray-900">보호자명: {nokInfo?.name || '미등록'}</p>
-                                <p className="text-gray-900">등록 전화번호: {nokInfo?.phoneNumber || '미등록'}</p>
-                                <p className="text-gray-900">관계: {nokInfo?.relationship || '미등록'}</p>
+                                <p className="text-gray-900">보호자명: {NOKInfo?.name || '미등록'}</p>
+                                <p className="text-gray-900">등록 전화번호: {NOKInfo?.phoneNumber || '미등록'}</p>
+                                <p className="text-gray-900">관계: {NOKInfo?.relationship || '미등록'}</p>
                             </div>
                         </div>
                     </div>

@@ -46,8 +46,13 @@ export function saveTempSignupData(data: Partial<UserJoinPayload>) {
         userDetail: { ...currentData.userDetail, ...data.userDetail },
         interests: { ...currentData.interests, ...data.interests },
         userSetting: { ...currentData.userSetting, ...data.userSetting },
-        nokInfo: { ...currentData.NOKInfo, ...data.NOKInfo },
+        NOKInfo: { ...currentData.NOKInfo, ...data.NOKInfo },
     };
+    
+    if ('nokInfo' in newData) {
+        delete (newData as Record<string, unknown>).nokInfo;
+    }
+    
     localStorage.setItem(STORAGE_KEY, JSON.stringify(newData));
 }
 
