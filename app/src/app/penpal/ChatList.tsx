@@ -30,16 +30,16 @@ type ApiChatResponse = {
     data: ChatRoomData;
 }
 
-const getAuthTokenFromCookie = (): string | null => {
-    if (typeof document !== 'undefined') {
-        const match = document.cookie.match(new RegExp('(^| )jwt=([^;]+)'))
-        if (match) return match[2]
-    }
-    return null
+const getCookie = (name: string): string | null => {
+    if (typeof document === "undefined") return null;
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop()?.split(";").shift() || null;
+    return null;
 }
 
 const authFetcher = async (url: string) => {
-    const token = getAuthTokenFromCookie()
+    const token = getCookie("accessToken");
     if (!token) throw new Error('인증 토큰이 없습니다.')
 
     const res = await fetch(url, {

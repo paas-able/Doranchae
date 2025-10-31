@@ -53,15 +53,19 @@ const ChatRoomPage = () => {
     const stompClientRef = useRef<Client | null>(null);
     const chatContainerRef = useRef<HTMLDivElement>(null);
 
-    const getJwtFromCookie = useCallback(() => {
+    const getCookie = useCallback((name: string): string | null => {
         if (typeof document === "undefined") return null;
-        const match = document.cookie.match(/jwt=([^;]+)/);
-        return match ? match[1] : null;
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop()?.split(";").shift() || null;
+        return null;
     }, []);
 
     useEffect(() => {
-        setJwtToken(getJwtFromCookie());
-    }, [getJwtFromCookie]);
+        const token = getCookie("accessToken");
+        if (!token) return;
+        setJwtToken(token);
+    }, [getCookie]);
 
     const loadMessages = async (nextPage: number) => {
         if (!jwtToken || loadingOldMessages || !chatRoomId || (nextPage > 0 && !hasMore)) return;
