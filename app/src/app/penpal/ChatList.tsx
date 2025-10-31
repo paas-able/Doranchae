@@ -62,7 +62,7 @@ export function ChatList() {
 
     const getKey = (pageIndex: number, previousPageData: ApiChatResponse | null) => {
         if (previousPageData && previousPageData.data.page.isLast) return null
-        return `http://localhost:8080/api/chat/list?page=${pageIndex}`
+        return `http://chat:8084/api/chat/list?page=${pageIndex}`
     }
 
     const { data, error, isLoading, size, setSize } = useSWRInfinite<ApiChatResponse>(

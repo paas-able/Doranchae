@@ -70,7 +70,7 @@ const ChatRoomPage = () => {
 
         try {
             const res = await axios.post(
-                "http://localhost:8080/api/chat/room/messages",
+                "http://chat:8084/api/chat/room/messages",
                 { chatRoomId: chatRoomId },
                 {
                     headers: { Authorization: `Bearer ${jwtToken}` },
@@ -121,7 +121,7 @@ const ChatRoomPage = () => {
 
         try {
             const res = await axios.get(
-                "http://localhost:8080/api/chat/list",
+                "http://chat:8084/api/chat/list",
                 {
                     headers: { Authorization: `Bearer ${jwtToken}` },
                     params: { page: 0, size: 20 }
@@ -161,7 +161,7 @@ const ChatRoomPage = () => {
         }
 
         const client = new Client({
-            webSocketFactory: () => new SockJS("http://localhost:8080/ws-chat"),
+            webSocketFactory: () => new SockJS("http://chat:8084/ws-chat"),
             connectHeaders: { Authorization: `Bearer ${jwtToken}` },
             debug: (str) => console.log(new Date(), str),
 
