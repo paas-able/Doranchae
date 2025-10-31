@@ -94,6 +94,12 @@ services:
       - penpal
       - welfare
       - chat
+    environment: 
+      - AUTH_INTERNAL_URL=http://user:8080 
+      - COMMUNITY_INTERNAL_URL=http://community:8081
+      - PENPAL_INTERNAL_URL=http://penpal:8082
+      - WELFARE_INTERNAL_URL=http://welfare:8083
+      - CHAT_INTERNAL_URL=http://chat:8084
     
   db:
     image: mysql:8.0
