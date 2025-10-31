@@ -31,14 +31,14 @@ data class WelfareListResponse(
 class WelfareController(
     private val welfareService: WelfareService
 ) {
-    
+
     @GetMapping
     fun getAllWelfares(): ResponseEntity<DataResponse<WelfareListResponse>> {
         val welfares = welfareService.getAllWelfares()
         val response = WelfareListResponse(welfares.map { it.toResponse() })
         return ApiResponse.success(response)
     }
-    
+
     @GetMapping("/search")
     fun searchWelfares(
         @RequestParam(required = false) theme: String?,
@@ -48,7 +48,7 @@ class WelfareController(
         val response = WelfareListResponse(welfares.map { it.toResponse() })
         return ApiResponse.success(response)
     }
-    
+
     @GetMapping("/{id}")
     fun getWelfareById(@PathVariable id: UUID): ResponseEntity<DataResponse<WelfareResponse>> {
         val welfare = welfareService.getWelfareById(id)
@@ -56,18 +56,14 @@ class WelfareController(
     }
 
     @PostMapping("/{id}/like")
-    fun addLike(
-        @PathVariable id: UUID
-    ): ResponseEntity<DataResponse<String>> {
-        val userId = getCurrentUserId()  // ← JWT에서 추출
+    fun addLike(@PathVariable id: UUID): ResponseEntity<DataResponse<String>> {
+        val userId = getCurrentUserId()
         welfareService.addLike(id, userId)
         return ApiResponse.success("좋아요 추가됨")
     }
 
     @DeleteMapping("/{id}/like")
-    fun removeLike(
-        @PathVariable id: UUID
-    ): ResponseEntity<DataResponse<String>> {
+    fun removeLike(@PathVariable id: UUID): ResponseEntity<DataResponse<String>> {
         val userId = getCurrentUserId()
         welfareService.removeLike(id, userId)
         return ApiResponse.success("좋아요 취소됨")
@@ -79,47 +75,38 @@ class WelfareController(
     }
 
     @GetMapping("/user/{userId}/likes")
-    fun getMyLikes(
-        @PathVariable userId: String
-    ): ResponseEntity<DataResponse<WelfareListResponse>> {
-        // 본인 데이터만 조회 가능
+    fun getMyLikes(@PathVariable userId: String): ResponseEntity<DataResponse<WelfareListResponse>> {
         val authenticatedUserId = getCurrentUserId()
         if (userId != authenticatedUserId) {
             throw IllegalArgumentException("Unauthorized access")
         }
-        
+
         val welfares = welfareService.getMyLikes(userId)
         val response = WelfareListResponse(welfares.map { it.toResponse() })
         return ApiResponse.success(response)
     }
 
     @GetMapping("/user/{userId}/scraps")
-    fun getMyScraps(
-        @PathVariable userId: String
-    ): ResponseEntity<DataResponse<WelfareListResponse>> {
+    fun getMyScraps(@PathVariable userId: String): ResponseEntity<DataResponse<WelfareListResponse>> {
         val authenticatedUserId = getCurrentUserId()
         if (userId != authenticatedUserId) {
             throw IllegalArgumentException("Unauthorized access")
         }
-        
+
         val welfares = welfareService.getMyScraps(userId)
         val response = WelfareListResponse(welfares.map { it.toResponse() })
         return ApiResponse.success(response)
     }
 
     @PostMapping("/{id}/scrap")
-    fun addScrap(
-        @PathVariable id: UUID
-    ): ResponseEntity<DataResponse<String>> {
+    fun addScrap(@PathVariable id: UUID): ResponseEntity<DataResponse<String>> {
         val userId = getCurrentUserId()
         welfareService.addScrap(id, userId)
         return ApiResponse.success("스크랩 추가됨")
     }
 
     @DeleteMapping("/{id}/scrap")
-    fun removeScrap(
-        @PathVariable id: UUID
-    ): ResponseEntity<DataResponse<String>> {
+    fun removeScrap(@PathVariable id: UUID): ResponseEntity<DataResponse<String>> {
         val userId = getCurrentUserId()
         welfareService.removeScrap(id, userId)
         return ApiResponse.success("스크랩 취소됨")
@@ -129,13 +116,13 @@ class WelfareController(
     fun getScrapCount(@PathVariable id: UUID): ResponseEntity<DataResponse<Long>> {
         return ApiResponse.success(welfareService.getScrapCount(id))
     }
-    
-    // ==================== 유틸 함수 ====================
+
+    // ==================== 🔑 유틸 함수 ====================
     private fun getCurrentUserId(): String {
         val authentication = SecurityContextHolder.getContext().authentication
-        return (authentication.principal as UUID).toString()
+        return authentication.principal.toString()
     }
-    
+
     private fun Welfare.toResponse(): WelfareResponse {
         return WelfareResponse(
             id = id,
