@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { saveTempSignupData, getTempSignupData } from '@/libs/tempSignupData';
 
 // --- 색상 변수 ---
 const Bg = "#FDFAED";
@@ -16,20 +17,37 @@ const MM = "#8B9744";
 const GuardianPage = () => {
     const router = useRouter();
     
-    // 1. 보호자 정보 상태
+    // 1. 보호자 정보 상태 변수
     const [name, setName] = useState('');
     const [phone, setPhone] = useState('');
     const [relationship, setRelationship] = useState('');
 
-    // 2. 다음 버튼 클릭 핸들러
+    // 2. 컴포넌트 마운트 시 기존 데이터 불러오기
+    useEffect(() => {
+        const data = getTempSignupData();
+        if (data.nextOfKin?.name) setName(data.nextOfKin.name);
+        if (data.nextOfKin?.phoneNumber) setPhone(data.nextOfKin.phoneNumber);
+        if (data.nextOfKin?.relationship) setRelationship(data.nextOfKin.relationship);
+    }, []);
+    
+    // 3. '다음' 버튼 클릭 핸들러
     const handleNext = () => {
         // (간단한 유효성 검사)
         if (!name || !phone || !relationship) {
             alert("모든 정보를 입력해주세요.");
             return;
         }
-        console.log("보호자 정보:", { name, phone, relationship });
-        // [!!] 다음 단계인 '알림 설정' 페이지로 이동
+
+        // 4. 데이터 저장 (API 형식: nextOfKin)
+        saveTempSignupData({
+            nextOfKin: {
+                name: name,
+                phoneNumber: phone.replace(/\s-\s/g, ''), // 하이픈 제거 후 저장
+                relationship: relationship,
+            }
+        });
+        console.log("DEBUG: 보호자 정보 저장 완료");
+
         router.push('/signup/notifications'); 
     };
 
@@ -119,7 +137,7 @@ const GuardianPage = () => {
                     className="w-full py-3 rounded-lg text-gray-800 font-semibold transition-opacity duration-200"
                     style={{ 
                         backgroundColor: M5,
-                        opacity: isFormValid ? 1 : 0.5 // 3. 폼 유효하면 버튼 활성화
+                        opacity: isFormValid ? 1 : 0.5
                     }}
                     disabled={!isFormValid}
                 >

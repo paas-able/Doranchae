@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { saveTempSignupData, getTempSignupData } from '@/libs/tempSignupData';
 
 // --- 색상 변수 ---
 const Bg = "#FDFAED";
@@ -15,31 +16,48 @@ const MM = "#8B9744"; // 선택 됨
 
 // 1. 관심주제 목록
 const TOPICS = [
-    '경제', '스포츠', '원예', '시사·이슈',
-    '건강', '영화', '와인', '음악',
-    '예술', '자기계발', '독서', '반려동물',
-    '요리', '여행', '사진', '패션',
-    '게임', 'IT·과학', '자동차', '역사', '철학', '기타'
+    '일상', '스포츠', '경제', '건강',
+    '원예', '시사 ⋅ 이슈', '예술', '와인',
+    '연예', '커피', '자기계발', '독서',
+    '반려동물', '요리', '심리', '역사'
 ];
-
 const InterestsPage = () => {
     const router = useRouter();
     const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
     
     const handleTopicClick = (topic: string) => {
-        setSelectedTopics((prev) => 
-            prev.includes(topic)
-                ? prev.filter((t) => t !== topic) 
-                : [...prev, topic]
-        );
+        setSelectedTopics((prev) => {
+            if (prev.includes(topic)) {
+                return prev.filter((t) => t !== topic);
+            }
+            
+            if (prev.length >= 3) {
+                alert("관심 주제는 최대 3개까지만 선택할 수 있습니다.");
+                return prev;
+            }
+
+            return [...prev, topic];
+        });
     };
 
     const handleNext = () => {
         if (selectedTopics.length < 3) {
-            alert("3개 이상의 주제를 선택해주세요.");
+            alert("최대 3개의 주제를 선택해주세요.");
             return;
         }
-        console.log("선택된 주제:", selectedTopics);
+
+        const interestsPayload: { [key: string]: string } = {};
+        selectedTopics.slice(0, 3).forEach((topic, index) => {
+            interestsPayload[`interest${index + 1}`] = topic; 
+        });
+
+        console.log("DEBUG: 관심사 저장", interestsPayload);
+        
+        saveTempSignupData({
+            interests: interestsPayload as any
+        });
+
+        // 다음 페이지로 이동
         router.push('/signup/guardian'); 
     };
 
