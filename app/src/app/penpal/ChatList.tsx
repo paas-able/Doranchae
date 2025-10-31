@@ -30,6 +30,7 @@ type ApiChatResponse = {
     data: ChatRoomData;
 }
 
+const router = useRouter();
 const getCookie = (name: string): string | null => {
     if (typeof document === "undefined") return null;
     const value = `; ${document.cookie}`;
@@ -40,7 +41,13 @@ const getCookie = (name: string): string | null => {
 
 const authFetcher = async (url: string) => {
     const token = getCookie("accessToken");
-    if (!token) throw new Error('인증 토큰이 없습니다.')
+    if (!token) {
+        if (!token) {
+            console.error("인증 토큰이 쿠키에 없습니다. 로그인 필요.");
+            router.push('/login');
+            return;
+        };
+    }
 
     const res = await fetch(url, {
         headers: {

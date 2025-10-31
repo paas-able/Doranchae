@@ -6,6 +6,7 @@ import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
 import Image from "next/image";
 import logo from "@assets/ieumi.png";
+import { useRouter } from 'next/navigation';
 
 const BackArrowIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
@@ -41,6 +42,8 @@ const IeumiPage = () => {
     const userMessageBubbleBg = "#F8EDD0";
     const inputBarBg = "#F8EDD0";
 
+    const router = useRouter();
+
     const [messages, setMessages] = useState<Message[]>([]);
     const [newMessage, setNewMessage] = useState("");
     const [chatRoomId, setChatRoomId] = useState<string | null>(null);
@@ -64,7 +67,11 @@ const IeumiPage = () => {
 
     useEffect(() => {
         const token = getCookie("accessToken");
-        if (!token) return;
+        if (!token) {
+            console.error("인증 토큰이 쿠키에 없습니다. 로그인 필요.");
+            router.push('/login'); // useRouter가 MyPage에 임포트되어 있어야 합니다.
+            return;
+        };
         setJwtToken(token);
     }, [getCookie]);
 
