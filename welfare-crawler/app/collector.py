@@ -20,7 +20,7 @@ from init import (
     CREATE_TABLE_SQL
 )
 
-MAX_RETRIES = 3      # 최대 재시도 횟수
+MAX_RETRIES = 5      # 최대 재시도 횟수
 RETRY_DELAY_SEC = 10  # 재시도 간 대기 시간 (초)
 LIST_API_URL = "https://apis.data.go.kr/B554287/LocalGovernmentWelfareInformations/LcgvWelfarelist"
 # DETAIL_API_URL = "https://apis.data.go.kr/B554287/LocalGovernmentWelfareInformations/LcgvWelfaredetailed"
@@ -32,6 +32,7 @@ class WelfareCollector:
         self.db_connection = None
         self.is_db_connected = False
         self.success_count = 0
+        self.first_data_logged = False
 
     def _connect_db(self):
         """MySQL DB 연결 및 테이블 존재 확인"""
@@ -73,6 +74,14 @@ class WelfareCollector:
             # (수정) bytes.fromhex(UUID) 변환 로직 제거
             cursor.execute(insert_sql, insert_tuple)
             self.db_connection.commit()
+            if not self.first_data_logged:
+                print("\n=============================================")
+                print("INFO: 첫 번째 DB 삽입/업데이트 데이터 미리보기")
+                print(f"  > servId (PK): {insert_tuple[0]}")
+                print(f"  > Title: {insert_tuple[1]}")
+                print(f"  > Region: {insert_tuple[4]}")
+                print("=============================================\n")
+                self.first_data_logged = True
             return 1
         except mysql.connector.Error as err:
             print(f"ERROR: DB 삽입 오류 (ID: {insert_tuple[0][:8]}...): {err}")
@@ -186,7 +195,7 @@ class WelfareCollector:
                 
                 if not serv_list_elements:
                     print(f"INFO: 페이지 {pageNo}에서 'servList' 항목을 찾을 수 없습니다.")
-                    break # 더 이상 데이터가 없으면 중단
+                    break
 
                 page_success_count = 0
                 for item in serv_list_elements:

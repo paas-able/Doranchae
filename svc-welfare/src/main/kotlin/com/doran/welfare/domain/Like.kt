@@ -5,16 +5,16 @@ import java.util.UUID
 
 data class Like(
     val id: UUID,
-    val welfareId: UUID,
+    val welfareId: String,
     val userId: String,
     val createdAt: LocalDateTime
 )
 
 interface LikeRepository {
-    fun findByWelfareIdAndUserId(welfareId: UUID, userId: String): Like?
+    fun findByWelfareIdAndUserId(welfareId: String, userId: String): Like?
     fun findByUserId(userId: String): List<Like>
-    fun findByWelfareId(welfareId: UUID): List<Like>
+    fun findByWelfareId(welfareId: String): List<Like>
     fun save(like: Like): UUID
-    fun deleteByWelfareIdAndUserId(welfareId: UUID, userId: String)
-    fun countByWelfareId(welfareId: UUID): Long
+    fun deleteByWelfareIdAndUserId(welfareId: String, userId: String)
+    fun countByWelfareId(welfareId: String): Long
 }

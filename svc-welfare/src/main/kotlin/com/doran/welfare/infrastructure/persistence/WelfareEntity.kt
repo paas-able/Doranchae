@@ -1,81 +1,52 @@
 package com.doran.welfare.infrastructure.persistence
 
 import com.doran.welfare.domain.Welfare
-import com.doran.welfare.domain.WelfareRepository
 import jakarta.persistence.*
-import org.springframework.data.jpa.repository.JpaRepository
-import org.springframework.stereotype.Repository
 import java.time.LocalDate
-import java.util.UUID
 
 @Entity
 @Table(name = "welfare")
-class WelfareEntity protected constructor() {
+class WelfareEntity(
+
     @Id
-    @Column(columnDefinition = "BINARY(16)")
-    lateinit var id: UUID
+    @Column(name = "serv_id", length = 50)
+    val servId: String,
 
     @Column(nullable = false)
-    lateinit var title: String
+    val title: String,
 
-    @Column(nullable = false, columnDefinition = "TEXT")
-    lateinit var content: String
+    @Column(columnDefinition = "TEXT")
+    val content: String? = null,
 
-    @Column(nullable = false)
-    lateinit var organization: String
+    @Column
+    val organization: String? = null,
 
-    @Column(nullable = false)
-    lateinit var region: String
+    @Column
+    val region: String? = null,
 
-    @Column(nullable = false)
-    lateinit var localUploadDate: LocalDate
+    @Column(name = "local_upload_date")
+    val localUploadDate: LocalDate? = null,
 
-    @Column(nullable = false)
-    lateinit var startDate: LocalDate
+    @Column
+    val provider: String? = null,
 
-    @Column(nullable = true)
-    var endDate: LocalDate? = null
-
-    @Column(nullable = false)
-    lateinit var provider: String
-
-    @Column(name = "source_url")
-    lateinit var sourceUrl: String
-
-    constructor(
-        id: UUID,
-        title: String,
-        content: String,
-        organization: String,
-        region: String,
-        localUploadDate: LocalDate,
-        startDate: LocalDate,
-        endDate: LocalDate?,
-        provider: String,
-        sourceUrl: String
-    ) : this() {
-        this.id = id
-        this.title = title
-        this.content = content
-        this.organization = organization
-        this.region = region
-        this.localUploadDate = localUploadDate
-        this.startDate = startDate
-        this.endDate = endDate
-        this.provider = provider
-        this.sourceUrl = sourceUrl
-    }
+    @Column(name = "source_url", length = 1024)
+    val sourceUrl: String? = null
+) {
+    // 🔸 JPA 기본 생성자 (필수)
+    protected constructor() : this(
+        servId = "",
+        title = ""
+    )
 
     fun toDomain(): Welfare {
         return Welfare(
-            id = id,
+            servId = servId,
             title = title,
             content = content,
             organization = organization,
             region = region,
             localUploadDate = localUploadDate,
-            startDate = startDate,
-            endDate = endDate,
             provider = provider,
             sourceUrl = sourceUrl
         )
