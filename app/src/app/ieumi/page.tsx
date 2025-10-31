@@ -54,17 +54,19 @@ const IeumiPage = () => {
 
     const BOT_USER_ID = "00000000-0000-0000-0000-00000C0DE001";
 
-    const getJwtFromCookie = useCallback(() => {
+    const getCookie = useCallback((name: string): string | null => {
         if (typeof document === "undefined") return null;
-        const match = document.cookie.match(/jwt=([^;]+)/);
-        return match ? match[1] : null;
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop()?.split(";").shift() || null;
+        return null;
     }, []);
 
     useEffect(() => {
-        const token = getJwtFromCookie();
+        const token = getCookie("accessToken");
         if (!token) return;
         setJwtToken(token);
-    }, [getJwtFromCookie]);
+    }, [getCookie]);
 
     useEffect(() => {
         if (!jwtToken) return;
