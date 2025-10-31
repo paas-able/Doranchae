@@ -13,7 +13,7 @@ import logo from '@assets/drch_logo.png';
 const Header: React.FC = () => {
 
     return (
-        <div className="w-full h-fit justify-between flex items-center px-[20px] py-[15px] fixed bg-background top-0">
+        <div className="w-full h-fit justify-between flex items-center px-[20px] py-[15px]">
             <Link href="/">
                 <Image src={logo} alt="Home Button" width={55}/>
             </Link>

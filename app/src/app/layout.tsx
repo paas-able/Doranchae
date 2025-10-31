@@ -1,27 +1,25 @@
-import type {Metadata} from "next";
+import type { Metadata } from "next";
 import "./globals.css";
 import BottomNav from "@components/NavBar";
 import Header from "@components/Header"
 
 export const metadata: Metadata = {
-    title: "도란채",
-    description: "도란도란 이야기를 나누는 공간",
+  title: "도란채",
+  description: "도란도란 이야기를 나누는 공간",
 };
 
 export default function RootLayout({
-                                       children,
-                                   }: Readonly<{
-    children: React.ReactNode;
+  children,
+}: Readonly<{
+  children: React.ReactNode;
 }>) {
-    return (
-        <html lang="en">
-        <body>
+  return (
+    <html lang="en">
+      <body>
         <Header/>
-        <div className={'children'}>
-            {children}
-        </div>
+        {children}
         <BottomNav/>
-        </body>
-        </html>
-    );
+      </body>
+    </html>
+  );
 }
