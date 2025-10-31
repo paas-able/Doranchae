@@ -1,24 +1,21 @@
 package com.doran.welfare.domain
 
 import java.time.LocalDate
-import java.util.UUID
 
 data class Welfare(
-    val id: UUID,
+    val servId: String,
     val title: String,
-    val content: String,
-    val organization: String,
-    val region: String,
-    val localUploadDate: LocalDate,
-    val startDate: LocalDate,
-    val endDate: LocalDate?,
-    val provider: String,
-    val sourceUrl: String
+    val content: String?,
+    val organization: String?,
+    val region: String?,
+    val localUploadDate: LocalDate?,
+    val provider: String?,
+    val sourceUrl: String?
 )
 
 interface WelfareRepository {
     fun findAll(): List<Welfare>
-    fun findById(id: UUID): Welfare?
+    fun findById(servId: String): Welfare?
     fun search(theme: String?, region: String?): List<Welfare>
-    fun save(welfare: Welfare): UUID
+    fun save(welfare: Welfare): String
 }
