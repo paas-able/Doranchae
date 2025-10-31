@@ -6,6 +6,7 @@ const urls = {
   community: process.env.COMMUNITY_INTERNAL_URL ?? 'http://community:8081',
   penpal:    process.env.PENPAL_INTERNAL_URL    ?? 'http://penpal:8082',
   welfare:   process.env.WELFARE_INTERNAL_URL   ?? 'http://welfare:8083',
+    // welfare:   process.env.WELFARE_INTERNAL_URL   ?? 'http://localhost:8083',
 }
 
 const nextConfig: NextConfig = {
