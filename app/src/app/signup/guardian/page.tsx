@@ -42,7 +42,7 @@ const GuardianPage = () => {
         saveTempSignupData({
             NOKInfo: {
                 name: name,
-                phoneNumber: phone.replace(/\s-\s/g, ''), // 하이픈 제거 후 저장
+                phoneNumber: phone,
                 relationship: relationship,
             }
         });

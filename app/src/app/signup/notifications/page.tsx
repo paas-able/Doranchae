@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { saveTempSignupData, getTempSignupData, clearTempSignupData } from '@/libs/tempSignupData';
+import { saveTempSignupData, getTempSignupData, clearTempSignupData, UserJoinPayload } from '@/libs/tempSignupData'; 
 
 // --- 색상 변수 ---
 const Bg = "#FDFAED";
@@ -11,70 +11,102 @@ const M1 = "#CCA57A";
 const M2 = "#F8EDD0"; 
 const M3 = "#FDFAE3";
 const M4 = "#EAEDCC";
-const M5 = "#CED5B2"; // '네', '아니요' 버튼
+const M5 = "#CED5B2";
 const MM = "#8B9744"; 
 // ---------------------
+
+// [!!] 1. 'any' 타입을 제거하기 위해 인터페이스 정의 (유지)
+interface ValidationError {
+    field: string;
+    defaultMessage: string;
+}
+interface SpringErrorResponse {
+    message?: string;
+    // [!!] 2. 'errors'가 배열이 아닌 객체(Map)일 수 있음을 반영
+    errors?: Record<string, string> | ValidationError[]; 
+}
+// ---------------------
+
 
 const NotificationsPage = () => {
     const router = useRouter();
     
-    // 1. 알림 설정 동의 상태 (기본값: 네)
     const [isAgreed, setIsAgreed] = useState(true);
     const [isLoading, setIsLoading] = useState(false);
 
-    // 2. 최종 제출 핸들러: 모든 데이터 통합 및 API 전송 (디버그 모드)
     const finalSubmit = async (agreed: boolean) => {
         setIsLoading(true);
         setIsAgreed(agreed);
         
-        // 1. 알림 동의 여부 저장
+        // ... (saveTempSignupData 로직 유지) ...
         saveTempSignupData({
             userSetting: {
-                // API 구조에 맞게 notificationPush는 알림 동의 여부로 사용
                 notificationPush: agreed, 
-                termsAgree: true, // 약관 동의는 이미 이전 페이지에서 확인되었으므로 true로 간주
+                termsAgree: true,
+                notificationSMS: false, // 필수 필드 채우기
+                notificationNOK: false, // 필수 필드 채우기
             }
         });
 
         const signupData = getTempSignupData();
         
-        // [!!] 2. 실제 API 통신 코드
         try {
-
-            const finalPayload = {
+            // ... (finalPayload 구성 및 콘솔 로그 유지) ...
+            const finalPayload: Partial<UserJoinPayload> = {
                 ...signupData,
+                nickname: signupData.nickname || signupData.loginId || "임시닉네임", 
+                NOKInfo: signupData.NOKInfo || undefined,
             };
-
+            
             console.log("--- FINAL API REQUEST (JOIN) ---");
-            console.log("Endpoint: /api/user/join");
-            console.log("Payload:", finalPayload);
+            console.log("Payload:", JSON.stringify(finalPayload, null, 2));
             console.log("------------------------------");
+
 
             const response = await fetch('/api/user/join', { 
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(finalPayload),
             });
 
+            // [!!] 3. 오류 처리 로직 (수정됨)
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || '회원가입에 실패했습니다.');
+                const errorText = await response.text(); 
+                console.error("--- SERVER VALIDATION ERROR ---");
+                console.error(errorText);
+                console.error("-------------------------------");
+                
+                let errorMessage = 'Validation failed'; 
+                
+                try {
+                    const errorData: SpringErrorResponse = JSON.parse(errorText);
+                    
+                    // [!!] 4. 'errors'가 배열이 아닌 객체(Object)인지 확인합니다.
+                    if (errorData.errors && !Array.isArray(errorData.errors) && typeof errorData.errors === 'object') {
+                        // 객체(Map)의 값(value)들을 추출하여 오류 메시지로 만듭니다.
+                        errorMessage = Object.values(errorData.errors).join(', ');
+                    } else if (errorData.message) {
+                        errorMessage = errorData.message;
+                    }
+                } catch (e) {
+                    errorMessage = "서버 응답 오류 (JSON 아님)";
+                }
+                
+                throw new Error(errorMessage);
             }
 
-            // 2-2. 성공 시 처리
+            // 5. 성공 시 처리
             console.log("API Success: 회원가입 완료.");
-            
-            clearTempSignupData(); // 임시 저장 데이터 제거
+            clearTempSignupData(); 
             
             alert("회원가입이 완료되었습니다! 로그인 페이지로 이동합니다.");
             router.push('/login'); 
 
-        } catch (error) { 
+        } catch (error: unknown) {
             const errorMessage = (error instanceof Error) ? error.message : '알 수 없는 오류'; 
             console.error("Error during signup:", errorMessage);
-            alert(`회원가입 실패: ${errorMessage}`);
+            // [!!] 6. 이제 alert에 "Validation failed"가 아닌 상세 오류가 뜹니다.
+            alert(`회원가입 실패: ${errorMessage}`); 
         } finally {
             setIsLoading(false);
         }
