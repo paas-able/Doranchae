@@ -16,5 +16,5 @@ data class UserInfoResponse (
     val gender: String,
     val interests: List<String>,
     
-    val nokInfo: NokInfoResponse? 
+    val NOKInfo: NokInfoResponse? 
 )

@@ -153,7 +153,7 @@ const SignupDetailsPage = () => {
             userDetail: {
                 name: name,
                 birthDate: formattedBirthdate, 
-                phoneNumber: phone.replace(/\s-\s/g, ''),
+                phoneNumber: phone,
                 gender: gender || undefined, 
             }
         });
