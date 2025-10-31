@@ -30,7 +30,7 @@ data class JoinRequest (
     val userSetting: UserSettings,
 
     @field:Valid // 3. 하위 DTO도 검증하도록 @Valid 추가
-    val nextOfKin: NOKInfo
+    val NOKInfo : NOKInfo
 )
 data class InterestsInput (
     val interest1: String,

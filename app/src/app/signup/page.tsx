@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation'; 
-import { saveTempSignupData, getTempSignupData } from '@/libs/tempSignupData';
+import { saveTempSignupData, getTempSignupData, UserJoinPayload } from '@/libs/tempSignupData';
 
 // --- 색상 변수 ---
 const Bg = "#FDFAED";
@@ -32,7 +32,7 @@ const SignupPage = () => {
         }
     }, []);
 
-    const handleNext = (e) => {
+    const handleNext = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
 
         if (!termsAgreed || !privacyAgreed) {
@@ -40,7 +40,7 @@ const SignupPage = () => {
             return;
         }
 
-        const userSettingPayload: any = {
+        const userSettingPayload: Partial<UserJoinPayload['userSetting']> = {
             termsAgree: termsAgreed && privacyAgreed,
         };
 
@@ -51,7 +51,7 @@ const SignupPage = () => {
         router.push('/signup/details');
     };
 
-    const handleAllAgree = (e) => {
+    const handleAllAgree = (e: React.ChangeEvent<HTMLInputElement>) => {
         const isChecked = e.target.checked;
         setAllAgreed(isChecked);
         setTermsAgreed(isChecked);

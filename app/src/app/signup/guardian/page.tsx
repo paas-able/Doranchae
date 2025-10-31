@@ -25,9 +25,9 @@ const GuardianPage = () => {
     // 2. 컴포넌트 마운트 시 기존 데이터 불러오기
     useEffect(() => {
         const data = getTempSignupData();
-        if (data.nextOfKin?.name) setName(data.nextOfKin.name);
-        if (data.nextOfKin?.phoneNumber) setPhone(data.nextOfKin.phoneNumber);
-        if (data.nextOfKin?.relationship) setRelationship(data.nextOfKin.relationship);
+        if (data.NOKInfo?.name) setName(data.NOKInfo.name);
+        if (data.NOKInfo?.phoneNumber) setPhone(data.NOKInfo.phoneNumber);
+        if (data.NOKInfo?.relationship) setRelationship(data.NOKInfo.relationship);
     }, []);
     
     // 3. '다음' 버튼 클릭 핸들러
@@ -38,15 +38,16 @@ const GuardianPage = () => {
             return;
         }
 
-        // 4. 데이터 저장 (API 형식: nextOfKin)
+        // 4. 데이터 저장 (API 형식: NOKInfo)
         saveTempSignupData({
-            nextOfKin: {
+            NOKInfo: {
                 name: name,
                 phoneNumber: phone.replace(/\s-\s/g, ''), // 하이픈 제거 후 저장
                 relationship: relationship,
             }
         });
-        console.log("DEBUG: 보호자 정보 저장 완료");
+        const currentData = getTempSignupData();
+        
 
         router.push('/signup/notifications'); 
     };

@@ -22,82 +22,45 @@ const LoginPage = () => {
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
-    const handleLogin = async (e) => {
-    e.preventDefault();
-    
-    // [!!] 1. 로딩 상태 시작 (수정/추가)
-    setIsLoading(true); 
-    setError('');
-
-    // 코드 중복 제거를 위해 try 블록 바깥으로 이동
-    console.log("로그인 시도:", { id, password });
-
-    try {
-        // --- DEBUG MODE: API 요청 기록 ---
-        console.log("--- DEBUG MODE: API 요청 ---");
-        console.log("API: 로그인");
-        console.log("Endpoint: /api/user/login");
-        console.log("Method: POST");
-        console.log("Body:", JSON.stringify({ loginId: id, password: password }));
-        console.log("----------------------------");
-
-        // [2단계: 가짜 응답 & 딜레이]
-        await new Promise(resolve => setTimeout(resolve, 1000)); // 1초 딜레이 시뮬레이션
-
-        // [3단계: 기능 구현 (시나리오 분기)]
-        if (id === "testUser" && password === "1234!") {
-            // 시나리오 1: 로그인 성공 목업 응답
-            const mockResponse = {
-                accessToken: "..."
-            };
-            console.log("DEBUG: 로그인 성공", mockResponse);
-            
-            // [!!] 성공 시 router.push 호출
-            router.push('/'); 
-            
-            // router.push가 호출된 후, 함수를 종료하여 finally 블록으로 이동
-            return; 
+    const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
         
+        // [!!] 1. 로딩 상태 시작 (수정/추가)
+        setIsLoading(true); 
+        setError('');
+
+        // 코드 중복 제거를 위해 try 블록 바깥으로 이동
+        console.log("로그인 시도:", { id, password });
+
+
+        try {
+        const response = await fetch('/api/user/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ loginId: id, password: password }),
+            credentials: 'include'
+        });
+
+        if (response.ok) {
+            const result = await response.json();
+            const token = result.accessToken;
+
+            console.log("로그인 성공:", token);
+            // 토큰을 쿠키에 저장 (1시간 유효)
+            document.cookie = `accessToken=${token}; path=/; max-age=3600;`;
+            
+            
+            router.push('/');
         } else {
-            // 시나리오 2: 로그인 실패 목업 응답
-            const mockError = "아이디 또는 비밀번호가 틀렸습니다.";
-            console.log("DEBUG: 로그인 실패", mockError);
-            setError(mockError);
+            setError("아이디 또는 비밀번호가 틀렸습니다.");
         }
-
-    } catch (error) {
-        console.error("DEBUG: Mocking 중 오류:", error);
-        setError("로그인 처리 중 오류가 발생했습니다.");
+    } catch (err) {
+        console.error("API 통신 오류:", err);
+        setError("로그인 중 오류가 발생했습니다. 다시 시도해주세요.");
     } finally {
-        setIsLoading(false); 
+        setIsLoading(false);
     }
-
-
-        // --- 실제 API 통신 코드 (주석 처리) ---
-        // try {
-        //     const response = await fetch('/api/user/login', {
-        //         method: 'POST',
-        //         headers: { 'Content-Type': 'application/json' },
-        //         body: JSON.stringify({ loginId: id, password: password }),
-        //         credentials: 'include'
-        //     });
-
-        //     if (response.ok) {
-        //         const result = await response.json();
-        //         console.log("로그인 성공:", result.accessToken);
-        //         router.push('/');
-        //     } else {
-
-        //         setError("아이디 또는 비밀번호가 틀렸습니다.");
-        //     }
-        // } catch (err) {
-        //     console.error("API 통신 오류:", err);
-        //     setError("로그인 중 오류가 발생했습니다. 다시 시도해주세요.");
-        // } finally {
-        //     setIsLoading(false);
-        // }
-
-    };
+};
 
     return (
         // 1. 전체 페이지 컨테이너
