@@ -63,7 +63,11 @@ const ChatRoomPage = () => {
 
     useEffect(() => {
         const token = getCookie("accessToken");
-        if (!token) return;
+        if (!token) {
+            console.error("인증 토큰이 쿠키에 없습니다. 로그인 필요.");
+            router.push('/login');
+            return;
+        };
         setJwtToken(token);
     }, [getCookie]);
 
