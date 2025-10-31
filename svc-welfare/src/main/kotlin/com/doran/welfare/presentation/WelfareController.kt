@@ -7,19 +7,16 @@ import com.doran.welfare.global.DataResponse
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.web.bind.annotation.*
-import java.util.UUID
 
 data class WelfareResponse(
-    val id: UUID,
+    val servId: String,
     val title: String,
-    val content: String,
-    val organization: String,
-    val region: String,
-    val localUploadDate: String,
-    val startDate: String,
-    val endDate: String?,
-    val provider: String,
-    val sourceUrl: String
+    val content: String?,
+    val organization: String?,
+    val region: String?,
+    val localUploadDate: String?,
+    val provider: String?,
+    val sourceUrl: String?
 )
 
 data class WelfareListResponse(
@@ -31,7 +28,6 @@ data class WelfareListResponse(
 class WelfareController(
     private val welfareService: WelfareService
 ) {
-
     @GetMapping
     fun getAllWelfares(): ResponseEntity<DataResponse<WelfareListResponse>> {
         val welfares = welfareService.getAllWelfares()
@@ -39,85 +35,51 @@ class WelfareController(
         return ApiResponse.success(response)
     }
 
-    @GetMapping("/search")
-    fun searchWelfares(
-        @RequestParam(required = false) theme: String?,
-        @RequestParam(required = false) region: String?
-    ): ResponseEntity<DataResponse<WelfareListResponse>> {
-        val welfares = welfareService.searchWelfares(theme, region)
-        val response = WelfareListResponse(welfares.map { it.toResponse() })
-        return ApiResponse.success(response)
-    }
-
-    @GetMapping("/{id}")
-    fun getWelfareById(@PathVariable id: UUID): ResponseEntity<DataResponse<WelfareResponse>> {
-        val welfare = welfareService.getWelfareById(id)
+    @GetMapping("/{servId}")
+    fun getWelfareById(@PathVariable servId: String): ResponseEntity<DataResponse<WelfareResponse>> {
+        val welfare = welfareService.getWelfareById(servId)
         return ApiResponse.success(welfare.toResponse())
     }
 
-    @PostMapping("/{id}/like")
-    fun addLike(@PathVariable id: UUID): ResponseEntity<DataResponse<String>> {
+    @PostMapping("/{servId}/like")
+    fun addLike(@PathVariable servId: String): ResponseEntity<DataResponse<String>> {
         val userId = getCurrentUserId()
-        welfareService.addLike(id, userId)
+        welfareService.addLike(servId, userId)
         return ApiResponse.success("좋아요 추가됨")
     }
 
-    @DeleteMapping("/{id}/like")
-    fun removeLike(@PathVariable id: UUID): ResponseEntity<DataResponse<String>> {
+    @DeleteMapping("/{servId}/like")
+    fun removeLike(@PathVariable servId: String): ResponseEntity<DataResponse<String>> {
         val userId = getCurrentUserId()
-        welfareService.removeLike(id, userId)
+        welfareService.removeLike(servId, userId)
         return ApiResponse.success("좋아요 취소됨")
     }
 
-    @GetMapping("/{id}/like-count")
-    fun getLikeCount(@PathVariable id: UUID): ResponseEntity<DataResponse<Long>> {
-        return ApiResponse.success(welfareService.getLikeCount(id))
+    @GetMapping("/{servId}/like-count")
+    fun getLikeCount(@PathVariable servId: String): ResponseEntity<DataResponse<Long>> {
+        return ApiResponse.success(welfareService.getLikeCount(servId))
     }
 
-    @GetMapping("/user/{userId}/likes")
-    fun getMyLikes(@PathVariable userId: String): ResponseEntity<DataResponse<WelfareListResponse>> {
-        val authenticatedUserId = getCurrentUserId()
-        if (userId != authenticatedUserId) {
-            throw IllegalArgumentException("Unauthorized access")
-        }
-
-        val welfares = welfareService.getMyLikes(userId)
-        val response = WelfareListResponse(welfares.map { it.toResponse() })
-        return ApiResponse.success(response)
-    }
-
-    @GetMapping("/user/{userId}/scraps")
-    fun getMyScraps(@PathVariable userId: String): ResponseEntity<DataResponse<WelfareListResponse>> {
-        val authenticatedUserId = getCurrentUserId()
-        if (userId != authenticatedUserId) {
-            throw IllegalArgumentException("Unauthorized access")
-        }
-
-        val welfares = welfareService.getMyScraps(userId)
-        val response = WelfareListResponse(welfares.map { it.toResponse() })
-        return ApiResponse.success(response)
-    }
-
-    @PostMapping("/{id}/scrap")
-    fun addScrap(@PathVariable id: UUID): ResponseEntity<DataResponse<String>> {
+    @PostMapping("/{servId}/scrap")
+    fun addScrap(@PathVariable servId: String): ResponseEntity<DataResponse<String>> {
         val userId = getCurrentUserId()
-        welfareService.addScrap(id, userId)
+        welfareService.addScrap(servId, userId)
         return ApiResponse.success("스크랩 추가됨")
     }
 
-    @DeleteMapping("/{id}/scrap")
-    fun removeScrap(@PathVariable id: UUID): ResponseEntity<DataResponse<String>> {
+    @DeleteMapping("/{servId}/scrap")
+    fun removeScrap(@PathVariable servId: String): ResponseEntity<DataResponse<String>> {
         val userId = getCurrentUserId()
-        welfareService.removeScrap(id, userId)
+        welfareService.removeScrap(servId, userId)
         return ApiResponse.success("스크랩 취소됨")
     }
 
-    @GetMapping("/{id}/scrap-count")
-    fun getScrapCount(@PathVariable id: UUID): ResponseEntity<DataResponse<Long>> {
-        return ApiResponse.success(welfareService.getScrapCount(id))
+    @GetMapping("/{servId}/scrap-count")
+    fun getScrapCount(@PathVariable servId: String): ResponseEntity<DataResponse<Long>> {
+        return ApiResponse.success(welfareService.getScrapCount(servId))
     }
 
-    // ==================== 🔑 유틸 함수 ====================
+    // ==================== UTIL ====================
     private fun getCurrentUserId(): String {
         val authentication = SecurityContextHolder.getContext().authentication
         return authentication.principal.toString()
@@ -125,14 +87,12 @@ class WelfareController(
 
     private fun Welfare.toResponse(): WelfareResponse {
         return WelfareResponse(
-            id = id,
+            servId = servId,
             title = title,
             content = content,
             organization = organization,
             region = region,
-            localUploadDate = localUploadDate.toString(),
-            startDate = startDate.toString(),
-            endDate = endDate?.toString(),
+            localUploadDate = localUploadDate?.toString(),
             provider = provider,
             sourceUrl = sourceUrl
         )
