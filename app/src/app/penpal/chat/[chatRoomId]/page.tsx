@@ -1,12 +1,12 @@
-"use client";
+'use client'
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { useState, useEffect, useRef, useCallback } from "react";
 import axios from "axios";
 import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
 import Image from "next/image";
 import logo from "@assets/ieumi.png";
-import { useRouter } from 'next/navigation';
 
 const BackArrowIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
@@ -27,35 +27,31 @@ const SendIcon = () => (
 );
 
 interface Message {
-    sender: "user" | "bot";
+    sender: "user" | "opponent";
     text: string;
 }
 
-interface ReceivedMessage {
-    content: string;
-    senderId: string;
-}
-
-const IeumiPage = () => {
+const ChatRoomPage = () => {
     const pageBg = "#FFFDF7";
     const messageBubbleBg = "#CED5B2";
     const userMessageBubbleBg = "#F8EDD0";
     const inputBarBg = "#F8EDD0";
 
+    const { chatRoomId } = useParams();
     const router = useRouter();
 
     const [messages, setMessages] = useState<Message[]>([]);
     const [newMessage, setNewMessage] = useState("");
-    const [chatRoomId, setChatRoomId] = useState<string | null>(null);
     const [jwtToken, setJwtToken] = useState<string | null>(null);
+    const [opponentName, setOpponentName] = useState<string>("상대방");
+    const [opponentId, setOpponentId] = useState<string | null>(null); // 1. opponentId state 추가
+
     const [page, setPage] = useState(0);
     const [hasMore, setHasMore] = useState(true);
     const [loadingOldMessages, setLoadingOldMessages] = useState(false);
 
     const stompClientRef = useRef<Client | null>(null);
     const chatContainerRef = useRef<HTMLDivElement>(null);
-
-    const BOT_USER_ID = "00000000-0000-0000-0000-00000C0DE001";
 
     const getCookie = useCallback((name: string): string | null => {
         if (typeof document === "undefined") return null;
@@ -69,137 +65,125 @@ const IeumiPage = () => {
         const token = getCookie("accessToken");
         if (!token) {
             console.error("인증 토큰이 쿠키에 없습니다. 로그인 필요.");
-            router.push('/login'); // useRouter가 MyPage에 임포트되어 있어야 합니다.
+            router.push('/login');
             return;
         };
         setJwtToken(token);
     }, [getCookie]);
 
-    useEffect(() => {
-        if (!jwtToken) return;
-
-        const setupChatRoom = async () => {
-            let roomId: string | null = null;
-            try {
-                const response = await axios.get("/api/chat/bot", {
-                    headers: { Authorization: `Bearer ${jwtToken}` },
-                });
-                roomId = response.data.data;
-            } catch (error) {
-                console.log("기존 채팅방 없음. 새로 생성합니다.");
-                try {
-                    const createResponse = await axios.post(
-                        "api/chat/room",
-                        { opponentId: BOT_USER_ID },
-                        { headers: { Authorization: `Bearer ${jwtToken}` } }
-                    );
-                    roomId = createResponse.data.data;
-                } catch (createError) {
-                    console.error("채팅방 생성 실패:", createError);
-                    return;
-                }
-            }
-
-            if (roomId) {
-                setChatRoomId(roomId);
-                await loadMessages(roomId, 0);
-                connectWebSocket(roomId);
-            }
-        };
-
-        setupChatRoom();
-
-        return () => {
-            if (stompClientRef.current?.active) {
-                stompClientRef.current.deactivate();
-            }
-        };
-    }, [jwtToken]);
-
-    const loadMessages = async (roomId: string, nextPage: number) => {
-        if (!jwtToken || loadingOldMessages || !hasMore) return;
+    const loadMessages = async (nextPage: number) => {
+        if (!jwtToken || loadingOldMessages || !chatRoomId || (nextPage > 0 && !hasMore)) return;
         setLoadingOldMessages(true);
-
         const PAGE_SIZE = 20;
 
         try {
-            const requestBody = {
-                chatRoomId: roomId
-            };
-
-            const requestParams = {
-                page: nextPage,
-                size: PAGE_SIZE
-            };
-
-            const response = await axios.post(
+            const res = await axios.post(
                 "/api/chat/room/messages",
-                requestBody,
+                { chatRoomId: chatRoomId },
                 {
                     headers: { Authorization: `Bearer ${jwtToken}` },
-                    params: requestParams
+                    params: { page: nextPage, size: PAGE_SIZE }
                 }
             );
 
-            const data = response.data.data;
-
+            const data = res.data.data;
             const reversedMessages = data.messages.reverse();
 
-            const newMessages = reversedMessages.map((msg: any) => ({
-                sender: msg.isFromUser ? "user" : "bot",
+            const newMsgs = reversedMessages.map((msg: any) => ({
+                sender: msg.senderId === data.currentUserId ? "user" : "opponent",
                 text: msg.content,
             }));
 
-            if (newMessages.length < PAGE_SIZE) {
+            if (newMsgs.length < PAGE_SIZE) {
                 setHasMore(false);
             }
 
-            setMessages((prev) => {
+            setMessages(prev => {
                 if (nextPage === 0) {
-                    return newMessages;
+                    return newMsgs;
                 } else {
-                    return [...newMessages, ...prev];
+                    return [...newMsgs, ...prev];
                 }
             });
 
-            setPage((prev) => prev + 1);
+            setPage(prev => prev + 1);
 
             if (nextPage === 0 && chatContainerRef.current) {
-                chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+                setTimeout(() => {
+                    if (chatContainerRef.current) {
+                        chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+                    }
+                }, 0);
             }
 
-        } catch (error) {
-            console.error("메시지 불러오기 실패:", error);
+        } catch (err) {
+            console.error("메시지 불러오기 실패:", err);
         } finally {
             setLoadingOldMessages(false);
         }
     };
 
-    const connectWebSocket = (roomId: string) => {
+    // 2. loadOpponentInfo가 opponentId를 state에 저장하도록 수정
+    const loadOpponentInfo = async () => {
+        if (!jwtToken || !chatRoomId) return;
+
+        try {
+            const res = await axios.get(
+                "/api/chat/list",
+                {
+                    headers: { Authorization: `Bearer ${jwtToken}` },
+                    params: { page: 0, size: 20 }
+                }
+            );
+
+            if (res.data?.isSuccess && res.data.data.chatRooms) {
+                const chatRooms = res.data.data.chatRooms;
+
+                const currentRoom = chatRooms.find(
+                    (room: any) => room.id === chatRoomId
+                );
+
+                if (currentRoom) {
+                    if (currentRoom.opponentName && currentRoom.opponentName !== "알 수 없음") {
+                        setOpponentName(currentRoom.opponentName);
+                    }
+                    if (currentRoom.opponentId) {
+                        setOpponentId(currentRoom.opponentId); // state에 저장
+                    }
+                } else {
+                    console.warn(`Chat room ${chatRoomId} not found in the first page of the list.`);
+                }
+            }
+        } catch (err) {
+            console.error("상대방 정보 불러오기 실패:", err);
+        }
+    };
+
+    // 3. connectWebSocket이 state의 opponentId를 사용하도록 수정
+    const connectWebSocket = () => {
+        // opponentId가 로드되지 않았으면 연결하지 않음
+        if (!jwtToken || !chatRoomId || !opponentId) return;
+
         if (stompClientRef.current) {
             stompClientRef.current.deactivate();
         }
 
-        const stompClient = new Client({
+        const client = new Client({
             webSocketFactory: () => new SockJS("/ws-chat"),
             connectHeaders: { Authorization: `Bearer ${jwtToken}` },
             debug: (str) => console.log(new Date(), str),
 
             onConnect: () => {
                 console.log("STOMP 연결 성공");
-                stompClientRef.current = stompClient;
+                stompClientRef.current = client;
 
-                stompClient.subscribe(`/topic/chat/room/${roomId}`, (message) => {
-                    const receivedMessage: ReceivedMessage = JSON.parse(message.body);
+                client.subscribe(`/topic/chat/room/${chatRoomId}`, (message) => {
+                    const msg = JSON.parse(message.body);
 
-                    const isFromBot = receivedMessage.senderId.toLowerCase() === BOT_USER_ID.toLowerCase();
+                    // "me" 대신 state의 opponentId와 비교
+                    const sender = msg.senderId === opponentId ? "opponent" : "user";
 
-                    const formattedMessage: Message = {
-                        sender: isFromBot ? "bot" : "user",
-                        text: receivedMessage.content,
-                    };
-
-                    setMessages((prev) => [...prev, formattedMessage]);
+                    setMessages(prev => [...prev, { sender: sender, text: msg.content }]);
                 });
             },
             onStompError: (frame) => {
@@ -210,19 +194,49 @@ const IeumiPage = () => {
             },
         });
 
-        stompClient.activate();
+        client.activate();
     };
 
-    const handleSend = () => {
-        if (!newMessage.trim() || !stompClientRef.current?.active || !chatRoomId) return;
+    // 4. useEffect 분리
 
-        const chatMessage = { chatRoomId, content: newMessage };
+    // 첫 번째 useEffect: 메시지와 상대방 정보를 로드
+    useEffect(() => {
+        if (jwtToken && chatRoomId) {
+            loadMessages(0);
+            loadOpponentInfo();
+        }
+    }, [jwtToken, chatRoomId]); // chatRoomId가 바뀔 때마다 정보 로드
+
+    // 두 번째 useEffect: WebSocket 연결 (opponentId가 세팅된 후에만)
+    useEffect(() => {
+        if (jwtToken && chatRoomId && opponentId) {
+            connectWebSocket();
+        }
+        return () => {
+            stompClientRef.current?.deactivate();
+        };
+    }, [jwtToken, chatRoomId, opponentId]); // opponentId가 변경될 때마다 재연결
+
+    useEffect(() => {
+        if (chatContainerRef.current && !loadingOldMessages) {
+            chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+        }
+    }, [messages, loadingOldMessages]);
+
+
+    const handleSend = () => {
+        if (!newMessage.trim() || !stompClientRef.current?.active || !chatRoomId) {
+            console.log("--- 메시지 전송 실패 ---");
+            console.log("입력된 메시지:", newMessage.trim());
+            console.log("STOMP 활성화 상태:", stompClientRef.current?.active);
+            console.log("채팅방 ID:", chatRoomId);
+            return;
+        }
 
         stompClientRef.current.publish({
             destination: "/app/chat/send",
-            body: JSON.stringify(chatMessage),
+            body: JSON.stringify({ chatRoomId, content: newMessage }),
         });
-
         setNewMessage("");
     };
 
@@ -231,15 +245,9 @@ const IeumiPage = () => {
         if (!container || loadingOldMessages || !hasMore) return;
 
         if (container.scrollTop < 50) {
-            loadMessages(chatRoomId!, page);
+            loadMessages(page);
         }
     };
-
-    useEffect(() => {
-        if (chatContainerRef.current && !loadingOldMessages) {
-            chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
-        }
-    }, [messages, loadingOldMessages]);
 
     return (
         <div
@@ -247,11 +255,16 @@ const IeumiPage = () => {
             style={{ backgroundColor: pageBg, height: "calc(100vh - 170px)" }}
         >
             <header className="flex-shrink-0 flex items-center justify-center relative p-4 bg-white z-10 shadow-sm">
-                <button className="absolute left-4 text-gray-700 flex items-center space-x-1 text-sm">
+                <button
+                    onClick={() => router.back()}
+                    className="absolute left-4 text-gray-700 flex items-center space-x-1 text-sm"
+                >
                     <BackArrowIcon />
                     <span>뒤로가기</span>
                 </button>
-                <h1 className="text-lg font-semibold text-gray-900">이음이</h1>
+                <h1 className="text-lg font-semibold text-gray-900">
+                    채팅
+                </h1>
             </header>
 
             <main
@@ -262,24 +275,26 @@ const IeumiPage = () => {
             >
                 {messages.length === 0 && !loadingOldMessages && (
                     <div className="text-center text-gray-500">
-                        안녕하세요! 이음이에게 무엇이든 물어보세요.
+                        안녕하세요! 대화를 시작해보세요.
                     </div>
                 )}
 
                 {messages.map((msg, index) =>
-                    msg.sender === "bot" ? (
+                    msg.sender === "opponent" ? (
                         <div key={index} className="flex items-start space-x-3">
                             <div className="flex-shrink-0 w-11 h-11 rounded-full bg-orange-100 flex items-center justify-center text-xl shadow-sm">
                                 <Image
                                     src={logo}
-                                    alt="이음이 프로필"
+                                    alt={`${opponentName} 프로필`}
                                     width={40}
                                     height={40}
                                     className="object-contain"
                                 />
                             </div>
                             <div className="flex flex-col items-start">
-                                <span className="font-semibold text-gray-800 mb-1 text-sm">이음이</span>
+                                <span className="font-semibold text-gray-800 mb-1 text-sm">
+                                    {opponentName}
+                                </span>
                                 <div
                                     className="p-3 rounded-lg max-w-xs text-black text-base shadow-sm"
                                     style={{ backgroundColor: messageBubbleBg }}
@@ -316,7 +331,7 @@ const IeumiPage = () => {
                                 handleSend();
                             }
                         }}
-                        placeholder={chatRoomId ? "대화를 시작해보세요" : "채팅방 연결 중..."}
+                        placeholder={chatRoomId ? "메시지를 입력하세요" : "채팅방 연결 중..."}
                         disabled={!chatRoomId}
                         className="flex-1 bg-transparent border-none focus:outline-none focus:ring-0 text-gray-700 placeholder-gray-500 px-3 py-2 disabled:opacity-75"
                     />
@@ -341,4 +356,4 @@ const IeumiPage = () => {
     );
 };
 
-export default IeumiPage;
+export default ChatRoomPage;

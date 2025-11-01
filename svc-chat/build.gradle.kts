@@ -20,6 +20,14 @@ repositories {
     mavenCentral()
 }
 
+val springCloudVersion = "2025.0.0"
+
+dependencyManagement {
+    imports {
+        mavenBom("org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}")
+    }
+}
+
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-validation")
@@ -28,7 +36,6 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-websocket")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.webjars:sockjs-client:1.5.1")
-    implementation ("org.springframework.boot:spring-boot-starter-security")
 
     //runtimeOnly("com.h2database:h2") // 개발 및 테스트용 인메모리 DB
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
@@ -42,6 +49,7 @@ dependencies {
 
 
     implementation("org.springframework.boot:spring-boot-starter-security")
+    implementation("org.springframework.cloud:spring-cloud-starter-openfeign")
 
     implementation("io.jsonwebtoken:jjwt-api:0.11.5")
     runtimeOnly("io.jsonwebtoken:jjwt-impl:0.11.5")

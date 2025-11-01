@@ -26,7 +26,7 @@ class JwtTokenProvider(
                 .parseClaimsJws(token)
                 .body
 
-            val userId = UUID.fromString(claims.subject)
+            val userId = UUID.fromString(claims["userId"] as String)
 
             return UsernamePasswordAuthenticationToken(userId, null, emptyList())
         } catch (e: JwtException) {
