@@ -1,7 +1,7 @@
 'use client'
 
 import React, {useEffect, useState} from "react";
-import {useSearchParams} from 'next/navigation';
+import {useRouter, useSearchParams} from 'next/navigation';
 
 const sendPenpalFetcher = async (url: string, token: string, data: { sendTo: String | null; content: string }) => {
     const response = await fetch(url, {
@@ -22,15 +22,38 @@ const sendPenpalFetcher = async (url: string, token: string, data: { sendTo: Str
     return response.json();
 }
 
-const tempToken = "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJ0ZXN0VXNlciIsInVzZXJJZCI6IjYzNDBkN2YyLWVjMTAtNDliMy04MzVmLWZkZjNjN2EwZDk3MSIsImlhdCI6MTc2MTg1NDU3MywiZXhwIjoxNzYxODU4MTczfQ.B7XCbft5cwAOCNDgQNiuyO06AJOeokp0liIn_wdKaK4ihMw9tM07KkbU5gwFJIm49LtHiuhGKyO6HLTvo1P2rw"
-
 export default function PenpalWritePage() {
+    const router = useRouter();
     const params = useSearchParams()
     const targetType = params.get('target');
     const [sendToView, setSendToView] = useState("로딩 중")
     const [sendTo, setSendTo] = useState<String|null>("로딩 중")
     const [penpalContent, setPenpalContent] = useState("")
     const [isSending, setIsSending] = useState(false)
+    const [accessToken, setAccessToken] = useState<String | null>(null)
+    const getAccessToken = () => {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            // 'accessToken='로 시작하는 쿠키를 찾습니다.
+            if (cookie.startsWith('accessToken=')) {
+                return cookie.substring('accessToken='.length);
+            }
+        }
+        return null;
+    };
+
+    useEffect(() => {
+        const token = getAccessToken();
+        if (!token) {
+            // 토큰이 없다면 바로 로그인 페이지로 이동시키거나 오류 처리
+            console.error("인증 토큰이 쿠키에 없습니다. 로그인 필요.");
+            router.push('/login'); // useRouter가 MyPage에 임포트되어 있어야 합니다.
+            return;
+        } else {
+            setAccessToken(token)
+        }
+    }, []);
 
     useEffect(() => {
         if (targetType === "random") {
@@ -58,7 +81,7 @@ export default function PenpalWritePage() {
 
             const data = await sendPenpalFetcher(
                 'http://localhost:8082/api/penpal/send',
-                tempToken,
+                accessToken!!,
                 sendBody
             );
 

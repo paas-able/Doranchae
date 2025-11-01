@@ -2,6 +2,8 @@
 
 import useSWR from 'swr'
 import Link from "next/link";
+import {useEffect, useState} from "react";
+import {useRouter} from "next/navigation";
 
 type Response = {
     penpals: Penpal[],
@@ -28,25 +30,49 @@ type PageInfo = {
     totalPages: number
 }
 
-// TODO: 토큰 해결시 삭제
-const tempToken = "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJ0ZXN0VXNlciIsInVzZXJJZCI6IjYzNDBkN2YyLWVjMTAtNDliMy04MzVmLWZkZjNjN2EwZDk3MSIsImlhdCI6MTc2MTg2MjAzMywiZXhwIjoxNzYxODY1NjMzfQ.jIvBtxrg1alOT2UmZEe5V047e_AJovy_-1Ak7SfsrDdJdQeS8uo1gF51PIZZ0SD0BYwZQ7amtZGvyUEZfIDuyw"
-const fetcher = (url: string) =>
-    fetch(url, {
-        method: "GET",
-        headers: {"Authorization": `Bearer ${tempToken}`}
-    }).then((res) => {
-        return res.json()
-    }).then((it) => {
-        if (it.isSuccess) {
-            return it.data
-        } else {
-            throw new Error('문제가 발생했습니다.');
-        }
-    })
-
 const penpalTextDark = "#4A4A4A";
 
 export function PenpalList() {
+    const router = useRouter();
+    const [accessToken, setAccessToken] = useState<String | null>(null)
+    const getAccessToken = () => {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            // 'accessToken='로 시작하는 쿠키를 찾습니다.
+            if (cookie.startsWith('accessToken=')) {
+                return cookie.substring('accessToken='.length);
+            }
+        }
+        return null;
+    };
+
+    useEffect(() => {
+        const token = getAccessToken();
+        if (!token) {
+            // 토큰이 없다면 바로 로그인 페이지로 이동시키거나 오류 처리
+            console.error("인증 토큰이 쿠키에 없습니다. 로그인 필요.");
+            router.push('/login'); // useRouter가 MyPage에 임포트되어 있어야 합니다.
+            return;
+        } else {
+            setAccessToken(token)
+        }
+    }, []);
+
+    const fetcher = (url: string) =>
+        fetch(url, {
+            method: "GET",
+            headers: {"Authorization": `Bearer ${accessToken}`}
+        }).then((res) => {
+            return res.json()
+        }).then((it) => {
+            if (it.isSuccess) {
+                return it.data
+            } else {
+                throw new Error('문제가 발생했습니다.');
+            }
+        })
+
     const {
         data,
         error,
