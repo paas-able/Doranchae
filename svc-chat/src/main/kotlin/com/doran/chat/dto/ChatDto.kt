@@ -22,7 +22,8 @@ class ChatDto {
 
     data class ChatRoomInfo (
         val id: UUID,
-        val opponentId: UUID?
+        val opponentId: UUID?,
+        val opponentName: String?
     )
 
     data class ChatRoomListResponse (
@@ -41,4 +42,9 @@ class ChatDto {
         val messages: List<MessageInfo>,
         val page: PageInfo
     )
+    data class UserDetailDto(
+        val userId: UUID,
+        val nickname: String
+    )
+
 }

@@ -25,7 +25,7 @@ class ChatRestController(
         return ApiResponse.success(result);
     }
 
-    @GetMapping("/room/messages")
+    @PostMapping("/room/messages")
     fun getMessages(
         @AuthenticationPrincipal userId: UUID,
         @RequestBody request: GetMessagesRequest,

@@ -6,7 +6,9 @@ import com.doran.chat.domain.repository.ChatRoomRepository
 import com.doran.chat.domain.repository.UserChatRepository
 import com.doran.chat.global.ErrorCode
 import com.doran.chat.dto.ChatDto.*
+import com.doran.chat.feign.UserClient
 import com.doran.chat.global.exception.CustomException
+import feign.FeignException
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
@@ -18,6 +20,7 @@ import java.util.*
 class ChatService(
     private val chatRoomRepository: ChatRoomRepository,
     private val userChatRepository: UserChatRepository,
+    private val userClient: UserClient,
     @Value("\${chatbot.user-id}") chatbotUserId: String
 ) {
     private val CHATBOT_USER_ID: UUID = UUID.fromString(chatbotUserId)
@@ -65,9 +68,28 @@ class ChatService(
         val chatRoomInfos: List<ChatRoomInfo> = chatRoomPage.content.map { chatRoom ->
             val opponentId = chatRoom.participantIds.firstOrNull { it != userId }
 
+            val opponentName: String = when {
+                opponentId == null -> {
+                    "알 수 없음"
+                }
+                opponentId == CHATBOT_USER_ID -> {
+                    "챗봇"
+                }
+                else -> {
+                    try {
+                        userClient.getUserDetail(opponentId).data?.nickname ?: "알 수 없음"
+                    } catch (e: FeignException) {
+                        "알 수 없음"
+                    } catch (e: Exception) {
+                        "알 수 없음"
+                    }
+                }
+            }
+
             ChatRoomInfo(
                 id = chatRoom.id,
-                opponentId = opponentId
+                opponentId = opponentId,
+                opponentName = opponentName
             )
         }
 
