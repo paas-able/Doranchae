@@ -5,7 +5,7 @@ import java.time.LocalDateTime
 import java.util.UUID
 
 @Entity
-@Table(name = "chatRoom")
+@Table(name = "chat_room")
 class ChatRoom(
         @Id
         @Column(columnDefinition = "binary(16)")

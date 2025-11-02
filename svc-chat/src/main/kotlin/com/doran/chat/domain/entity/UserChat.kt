@@ -5,14 +5,14 @@ import java.time.LocalDateTime
 import java.util.*
 
 @Entity
-@Table(name = "userChat")
+@Table(name = "user_chat")
 class UserChat (
     @Id
         @Column(columnDefinition = "binary(16)")
         val id: UUID = UUID.randomUUID(),
 
     @ManyToOne
-        @JoinColumn(name = "chatRoom_id")
+        @JoinColumn(name = "chat_room_id")
         val chatRoom: ChatRoom,
 
     @Column(nullable = false)
