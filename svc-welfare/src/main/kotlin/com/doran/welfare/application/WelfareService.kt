@@ -95,4 +95,9 @@ class WelfareService(
         val scraps = scrapRepository.findByUserId(userId)
         return scraps.mapNotNull { scrap -> welfareRepository.findById(scrap.welfareId) }
     }
+
+    fun getScrapsByUser(userId: String): List<Welfare> {
+        val scraps = scrapRepository.findByUserId(userId)
+        return scraps.mapNotNull { scrap -> welfareRepository.findById(scrap.welfareId) }
+    }
 }
