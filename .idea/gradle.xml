@@ -12,16 +12,44 @@
         </option>
       </GradleProjectSettings>
       <GradleProjectSettings>
+        <option name="externalProjectPath" value="$PROJECT_DIR$/svc-chat" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$/svc-chat" />
+          </set>
+        </option>
+      </GradleProjectSettings>
+      <GradleProjectSettings>
         <option name="externalProjectPath" value="$PROJECT_DIR$/svc-community" />
-        <option name="gradleJvm" value="valhalla-ea-23" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$/svc-community" />
+          </set>
+        </option>
       </GradleProjectSettings>
       <GradleProjectSettings>
         <option name="externalProjectPath" value="$PROJECT_DIR$/svc-penpal" />
-        <option name="gradleJvm" value="valhalla-ea-23" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$/svc-penpal" />
+          </set>
+        </option>
+      </GradleProjectSettings>
+      <GradleProjectSettings>
+        <option name="externalProjectPath" value="$PROJECT_DIR$/svc-user" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$/svc-user" />
+          </set>
+        </option>
       </GradleProjectSettings>
       <GradleProjectSettings>
         <option name="externalProjectPath" value="$PROJECT_DIR$/svc-welfare" />
-        <option name="gradleJvm" value="valhalla-ea-23" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$/svc-welfare" />
+          </set>
+        </option>
       </GradleProjectSettings>
     </option>
   </component>

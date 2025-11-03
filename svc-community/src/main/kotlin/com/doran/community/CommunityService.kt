@@ -4,11 +4,15 @@ import com.doran.community.entities.Comment
 import com.doran.community.entities.Post
 import com.doran.community.entities.PostLike
 import com.doran.community.entities.PostLikeId
+import com.doran.community.feign.UserInfoDetail
+import com.doran.community.feign.UserServiceFeignClient
 import com.doran.community.repositories.CommentRepository
 import com.doran.community.repositories.PostLikeRepository
 import com.doran.community.repositories.PostRepository
+import com.doran.penpal.global.DataResponse
 import com.doran.penpal.global.ErrorCode
 import com.doran.penpal.global.exception.CustomException
+import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.util.*
@@ -17,21 +21,29 @@ import java.util.*
 class CommunityService(
     val postRepository: PostRepository,
     val postLikeRepository: PostLikeRepository,
-    val commentRepository: CommentRepository
+    val commentRepository: CommentRepository,
+    val userServiceClient: UserServiceFeignClient,
 ) {
     @Transactional
-    fun createPost(req: CreatePostRequest): Post {
+    fun createPost(req: CreatePostRequest, userId: UUID): Post {
         // TODO: userId 검증 로직 추가
-        val newPost = Post(title = req.title, content = req.content, authorId = req.authorId)
+        val newPost = Post(title = req.title, content = req.content, authorId = userId)
         return postRepository.save(newPost)
     }
 
     @Transactional
-    fun editPost(postId: UUID, req: EditPostRequest): Post {
-        // TODO: 요청한 사람이 해당 post의 author인지 확인하는 로직 추가
+    fun retrievePosts(): List<Post> {
+        return postRepository.findAll(Sort.by(Sort.Direction.DESC, "createdAt"))
+    }
+
+    @Transactional
+    fun editPost(postId: UUID, req: EditPostRequest, userId: UUID): Post {
         val exPost = postRepository.findById(postId).orElseThrow{throw CustomException(ErrorCode.POST_NOT_FOUND)}
         if (exPost.isEdited) {
             throw CustomException(ErrorCode.POST_ALREADY_EDITED)
+        }
+        if (exPost.authorId !== userId) {
+            throw CustomException(ErrorCode.NOT_YOUR_POST)
         }
 
         when (req.editPart) {
@@ -102,14 +114,14 @@ class CommunityService(
     }
 
     @Transactional
-    fun createComment(postId: UUID, req: CreateCommentRequest): Comment {
+    fun createComment(postId: UUID, req: CreateCommentRequest, userId: UUID): Comment {
         val post = postRepository.findById(postId).orElseThrow{throw CustomException(ErrorCode.POST_NOT_FOUND)}
 
         if (req.parentId != null) {
             commentRepository.findById(req.parentId).orElseThrow{throw CustomException(ErrorCode.COMMENT_NOT_FOUND)}
         }
 
-        val newComment = Comment(parentId = req.parentId, authorId = req.authorId, content = req.content, post = post)
+        val newComment = Comment(parentId = req.parentId, authorId = userId, content = req.content, post = post)
         return commentRepository.save(newComment)
     }
 
@@ -137,6 +149,12 @@ class CommunityService(
     }
 
     @Transactional
+    fun retrieveCommentsCount(postId: UUID): Int{
+        val post = postRepository.findById(postId).orElseThrow{throw CustomException(ErrorCode.POST_NOT_FOUND)}
+        return commentRepository.findAllByPost(post).size
+    }
+
+    @Transactional
     fun deletePost(postId: UUID, userId: UUID): Boolean {
         val post = postRepository.findById(postId).orElseThrow{throw CustomException(ErrorCode.POST_NOT_FOUND)}
         if (post.authorId != userId) {
@@ -151,5 +169,11 @@ class CommunityService(
         } else {
             throw CustomException(ErrorCode.COMMON_INTERNAL_ERROR)
         }
+    }
+
+    @Transactional
+    fun retrieveUserInfo(userId: UUID): UserInfoDetail {
+        val response: DataResponse<UserInfoDetail> = userServiceClient.getUserInfo(userId)
+        return response.data!!
     }
 }

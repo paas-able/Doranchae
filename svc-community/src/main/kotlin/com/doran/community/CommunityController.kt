@@ -1,5 +1,6 @@
 package com.doran.community
 
+import com.doran.community.global.jwt.CustomUserDetails
 import com.doran.penpal.global.ApiResponse
 import com.doran.penpal.global.BaseResponse
 import com.doran.penpal.global.DataResponse
@@ -8,6 +9,7 @@ import com.doran.penpal.global.exception.CustomException
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
 import org.springframework.http.ResponseEntity
+import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.*
 import java.time.LocalDateTime
 import java.util.UUID
@@ -18,14 +20,38 @@ class CommunityController(
     val communityService: CommunityService
 ) {
     @PostMapping("/posts")
-    fun createPost(@Valid @RequestBody req: CreatePostRequest): ResponseEntity<DataResponse<CreatePostResponse>> {
-        val newPost = communityService.createPost(req)
+    fun createPost(@Valid @RequestBody req: CreatePostRequest, @AuthenticationPrincipal userDetails: CustomUserDetails): ResponseEntity<DataResponse<CreatePostResponse>> {
+        val newPost = communityService.createPost(req = req, userId = UUID.fromString(userDetails.userId))
         val responseDto = CreatePostResponse(postId = newPost.id, createdAt = newPost.createdAt)
         return ApiResponse.success(responseDto)
     }
 
+    @GetMapping("/posts")
+    fun retrievePosts(@AuthenticationPrincipal userDetails: CustomUserDetails): ResponseEntity<DataResponse<RetrievePostsResponse>>{
+        val postList = communityService.retrievePosts()
+
+        val responseDto = if (postList.isEmpty()) {
+            RetrievePostsResponse(posts = emptyList())
+        } else {
+            val formattedList = postList.map {
+                val commentCount = communityService.retrieveCommentsCount(it.id)
+
+                val contentPreview: String = if (it.content.length > 20) {
+                    it.content.substring(0,20)
+                } else {
+                    it.content
+                }
+
+                FormattedPost(id = it.id, title = it.title, contentPreview = contentPreview, createdAt = it.createdAt, likeCount = it.likes, commentCount = commentCount)
+            }
+            RetrievePostsResponse(posts = formattedList)
+        }
+
+        return ApiResponse.success(responseDto)
+    }
+
     @PatchMapping("/posts/{postId}")
-    fun editPost(@PathVariable postId: UUID, @Valid @RequestBody req: EditPostRequest): ResponseEntity<DataResponse<PatchResponse>> {
+    fun editPost(@PathVariable postId: UUID, @Valid @RequestBody req: EditPostRequest, @AuthenticationPrincipal userDetails: CustomUserDetails): ResponseEntity<DataResponse<PatchResponse>> {
         // editPart 검증
         val editPartFilter = listOf("both", "title", "content")
         if (!editPartFilter.contains(req.editPart)) {
@@ -33,44 +59,44 @@ class CommunityController(
         }
 
         // 수정
-        val editResult = communityService.editPost(postId, req)
+        val editResult = communityService.editPost(postId = postId, req = req, userId = UUID.fromString(userDetails.userId))
         return ApiResponse.success(PatchResponse(updatedAt = editResult.updatedAt))
     }
 
     @PostMapping("/posts/{postId}/like")
-    fun likePost(@PathVariable postId: UUID, @RequestBody req: TempUserIdRequest): ResponseEntity<DataResponse<PatchResponse>> {
-        val likeResult = communityService.likePost(postId, req.userId)
+    fun likePost(@PathVariable postId: UUID, @AuthenticationPrincipal userDetails: CustomUserDetails): ResponseEntity<DataResponse<PatchResponse>> {
+        val likeResult = communityService.likePost(postId = postId, userId = UUID.fromString(userDetails.userId))
         return ApiResponse.success(PatchResponse(updatedAt = likeResult.updatedAt))
     }
 
     @DeleteMapping("/posts/{postId}/like")
-    fun unlikePost(@PathVariable postId: UUID, @RequestBody req: TempUserIdRequest): ResponseEntity<DataResponse<PatchResponse>> {
-        val unlikeResult = communityService.unlikePost(postId, req.userId)
+    fun unlikePost(@PathVariable postId: UUID, @AuthenticationPrincipal userDetails: CustomUserDetails): ResponseEntity<DataResponse<PatchResponse>> {
+        val unlikeResult = communityService.unlikePost(postId = postId, userId = UUID.fromString(userDetails.userId))
         return ApiResponse.success(PatchResponse(updatedAt = unlikeResult.updatedAt))
     }
 
     @GetMapping("/posts/{postId}")
-    fun retrievePost(@PathVariable postId: UUID, @RequestBody req: TempUserIdRequest): ResponseEntity<DataResponse<RetrievePostResponse>> {
+    fun retrievePost(@PathVariable postId: UUID, @AuthenticationPrincipal userDetails: CustomUserDetails): ResponseEntity<DataResponse<RetrievePostResponse>> {
         val post = communityService.retrievePost(postId)
-        val isLike = communityService.retrievePostLike(postId, req.userId)
-        // TODO: 작성자 정보 조회 로직 구현
+        val isLike = communityService.retrievePostLike(postId = postId, userId = UUID.fromString(userDetails.userId))
+        val authorInfo = communityService.retrieveUserInfo(post.authorId)
 
         val postDto = PostInfo(postId = post.id, title = post.title, content = post.content, likes = post.likes, createdAt = post.createdAt, isEdited = post.isEdited)
-        val authorDto = AuthorInfo(userId = post.authorId, name = "temp")
+        val authorDto = AuthorInfo(userId = authorInfo.userId, name = authorInfo.nickname)
         val responseDto = RetrievePostResponse(post = postDto, author = authorDto, isLiked = isLike)
         return ApiResponse.success(responseDto)
     }
 
     @PostMapping("/comments/{postId}")
-    fun createComment(@PathVariable postId: UUID, @RequestBody req: CreateCommentRequest): ResponseEntity<DataResponse<CreateCommentResponse>> {
-        val newComment = communityService.createComment(postId, req)
+    fun createComment(@PathVariable postId: UUID, @RequestBody req: CreateCommentRequest, @AuthenticationPrincipal userDetails: CustomUserDetails): ResponseEntity<DataResponse<CreateCommentResponse>> {
+        val newComment = communityService.createComment(postId = postId, req = req, userId = UUID.fromString(userDetails.userId))
         val responseDto = CreateCommentResponse(commentId = newComment.id, createdAt = newComment.createdAt)
         return ApiResponse.success(responseDto)
     }
 
     @DeleteMapping("/comments/{commentId}")
-    fun deleteComment(@PathVariable commentId: UUID, @RequestBody req: TempUserIdRequest): ResponseEntity<BaseResponse> {
-        val deleteResult = communityService.deleteComment(commentId, req.userId)
+    fun deleteComment(@PathVariable commentId: UUID, @AuthenticationPrincipal userDetails: CustomUserDetails): ResponseEntity<BaseResponse> {
+        val deleteResult = communityService.deleteComment(commentId, UUID.fromString(userDetails.userId))
         if (deleteResult) {
             return ApiResponse.successWithNoData()
         } else {
@@ -79,14 +105,16 @@ class CommunityController(
     }
 
     @GetMapping("/comments/{postId}/list")
-    fun retrieveComments(@PathVariable postId: UUID, @RequestBody req: TempUserIdRequest): ResponseEntity<DataResponse<RetrieveCommentsResponse>>{
+    fun retrieveComments(@PathVariable postId: UUID, @AuthenticationPrincipal userDetails: CustomUserDetails): ResponseEntity<DataResponse<RetrieveCommentsResponse>>{
         val commentList = communityService.retrieveComments(postId)
 
         val responseDto: RetrieveCommentsResponse = if (commentList.isEmpty()) {
             RetrieveCommentsResponse(comments = emptyList())
         } else {
             val formattedList = commentList.map {
-                FormattedComment(id = it.id, parentId = it.parentId, authorId = it.authorId, content = it.content, createdAt = it.createdAt, isAuthor = (it.authorId == req.userId))
+                val author = communityService.retrieveUserInfo(it.authorId)
+                val authorInfo = AuthorInfo(userId = author.userId, name = author.nickname)
+                FormattedComment(id = it.id, parentId = it.parentId, author = authorInfo, content = it.content, createdAt = it.createdAt, isAuthor = (it.authorId == UUID.fromString(userDetails.userId)))
             }
             RetrieveCommentsResponse(comments = formattedList)
         }
@@ -95,8 +123,8 @@ class CommunityController(
     }
 
     @DeleteMapping("/post/{postId}")
-    fun deletePost(@Valid @RequestBody req: TempUserIdRequest, @PathVariable postId: UUID): ResponseEntity<BaseResponse> {
-        val deleteResult = communityService.deletePost(postId = postId, userId = req.userId)
+    fun deletePost(@AuthenticationPrincipal userDetails: CustomUserDetails, @PathVariable postId: UUID): ResponseEntity<BaseResponse> {
+        val deleteResult = communityService.deletePost(postId = postId, userId = UUID.fromString(userDetails.userId))
         if (deleteResult) {
             return ApiResponse.successWithNoData()
         } else {
@@ -110,9 +138,7 @@ data class CreatePostRequest (
     @field:NotBlank(message = "제목은 필수입니다.")
     val title: String,
     @field:NotBlank(message = "내용은 필수입니다.")
-    val content: String,
-    // TODO: Spring Security 적용 시 삭제
-    val authorId: UUID
+    val content: String
 )
 
 data class CreatePostResponse (
@@ -125,11 +151,6 @@ data class EditPostRequest (
     val editPart: String,
     val newTitle: String?,
     val newContent: String?
-)
-
-// TODO: Spring Security 구현시 삭제
-data class TempUserIdRequest (
-    val userId: UUID
 )
 
 data class PatchResponse (
@@ -160,8 +181,6 @@ data class CreateCommentRequest (
     @field:NotBlank(message = "내용은 필수입니다.")
     val content: String,
     val parentId: UUID?,
-    // TODO: Spring Security 구현 시 삭제
-    val authorId: UUID
 )
 
 data class CreateCommentResponse (
@@ -176,9 +195,21 @@ data class RetrieveCommentsResponse (
 data class FormattedComment (
     val id: UUID,
     val parentId: UUID?,
-    val authorId: UUID,
     val content: String,
     val createdAt: LocalDateTime,
-    // val author: AuthorInfo, TODO: 유저 정보 추가
+    val author: AuthorInfo,
     val isAuthor: Boolean
+)
+
+data class RetrievePostsResponse (
+    val posts: List<FormattedPost>
+)
+
+data class FormattedPost (
+    val id: UUID,
+    val title: String,
+    val contentPreview: String,
+    val createdAt: LocalDateTime,
+    val likeCount: Int,
+    val commentCount: Int
 )
