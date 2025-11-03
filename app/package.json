@@ -15,6 +15,10 @@
     "@mui/icons-material": "^7.3.2",
     "@stomp/stompjs": "^7.2.1",
     "axios": "^1.13.1",
+<<<<<<< HEAD
+=======
+    "lucide-react": "^0.552.0",
+>>>>>>> develop
     "next": "15.5.3",
     "next-pwa": "^5.6.0",
     "react": "19.1.0",
