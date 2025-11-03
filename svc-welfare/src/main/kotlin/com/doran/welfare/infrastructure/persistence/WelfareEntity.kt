@@ -9,7 +9,7 @@ import java.time.LocalDate
 class WelfareEntity(
 
     @Id
-    @Column(name = "serv_id", length = 50)
+    @Column(name = "servId", length = 50)
     val servId: String,
 
     @Column(nullable = false)

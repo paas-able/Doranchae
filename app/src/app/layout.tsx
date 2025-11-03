@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+
 import LayoutWrapper from "@components/LayoutWrapper";
 import BottomNav from "@components/NavBar";
 import Header from "@components/Header";
