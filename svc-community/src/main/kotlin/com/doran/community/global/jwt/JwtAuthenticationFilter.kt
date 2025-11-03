@@ -1,4 +1,4 @@
-package com.doran.penpal.global.jwt
+package com.doran.community.global.jwt
 
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest

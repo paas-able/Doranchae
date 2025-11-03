@@ -12,4 +12,14 @@ enum class ErrorCode(
     COMMON_BAD_REQUEST(HttpStatus.BAD_REQUEST, "COMM400", "Bad Request"),
     COMMON_UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "COMM401", "Unauthorized"),
     COMMON_INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "COMM500", "Internal Server Error"),
+
+    // COMMUNITY - POST
+    POST_ALREADY_EDITED(HttpStatus.BAD_REQUEST, "POST4001", "수정은 1회만 가능합니다"),
+    POST_NOT_FOUND(HttpStatus.BAD_REQUEST, "POST4002", "해당 게시글이 존재하지 않습니다"),
+    WRONG_EDIT_PART(HttpStatus.BAD_REQUEST, "POST4003", "허용되지 않은 수정 범위입니다"),
+    NOT_YOUR_POST(HttpStatus.BAD_REQUEST, "POSTT4011", "해당 글에 대한 권한이 없습니다"),
+
+    // COMMUNITY - COMMENT
+    COMMENT_NOT_FOUND(HttpStatus.BAD_REQUEST, "CMNT4001", "해당 댓글이 존재하지 않습니다"),
+    NOT_YOUR_COMMENT(HttpStatus.BAD_REQUEST, "CMNT4011", "해당 댓글에 대한 권한이 없습니다"),
 }

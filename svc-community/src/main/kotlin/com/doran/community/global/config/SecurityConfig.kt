@@ -1,7 +1,7 @@
-package com.doran.penpal.global.config
+package com.doran.community.global.config
 
-import com.doran.penpal.global.jwt.JwtAuthenticationFilter
-import com.doran.penpal.global.jwt.JwtTokenProvider
+import com.doran.community.global.jwt.JwtAuthenticationFilter
+import com.doran.community.global.jwt.JwtTokenProvider
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.security.authentication.AuthenticationManager
