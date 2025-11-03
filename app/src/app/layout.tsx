@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
 
-import LayoutWrapper from "@components/LayoutWrapper";
 import BottomNav from "@components/NavBar";
 import Header from "@components/Header";
 
@@ -21,7 +20,7 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <Header/>
-        <div className={"pt-[60px]"}>
+        <div className={"pt-[60px] pb-[70px] min-h-[calc(100vh)]"}>
             {children}
         </div>
         <BottomNav/>

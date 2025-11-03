@@ -1,9 +1,9 @@
 'use client'
 
 import useSWR from 'swr'
-import Link from "next/link";
 import {useEffect, useState} from "react";
 import {useRouter} from "next/navigation";
+import PenpalListItem from "@app/penpal/[id]/history/PenpalListItem";
 
 type Response = {
     penpals: Penpal[],
@@ -32,8 +32,13 @@ type PageInfo = {
 
 const penpalTextDark = "#4A4A4A";
 
+
 export function PenpalList() {
     const router = useRouter();
+    const [openMenuId, setOpenMenuId] = useState<number | null>(null);
+    const toggleMenu = (id: number) => {
+        setOpenMenuId(prevId => (prevId === id ? null : id));
+    };
     const [accessToken, setAccessToken] = useState<String | null>(null)
     const getAccessToken = () => {
         const cookies = document.cookie.split(';');
@@ -73,11 +78,13 @@ export function PenpalList() {
             }
         })
 
+    const swrKey = accessToken ? '/api/penpal/list?page=0&size=1000&sort=updatedAt,desc' : null
     const {
         data,
         error,
         isLoading
-    } = useSWR<Response>('http://localhost:8082/api/penpal/list?page=0&size=1000&sort=updatedAt,desc', fetcher)
+    } = useSWR<Response>(swrKey, fetcher)
+    console.log(data)
 
     if (error) return <div>데이터를 불러오는데 실패했습니다.</div>
     if (isLoading) return <div>로딩 중...</div>
@@ -85,7 +92,6 @@ export function PenpalList() {
 
 
     const handler = (opponent) => {
-        localStorage.setItem('opponent_nickname', opponent.nickname)
         localStorage.setItem('opponent_id', opponent.userId)
     }
 
@@ -96,11 +102,15 @@ export function PenpalList() {
             </h2>
             <div className="space-y-4">
                 {data.penpals.map((penpal) => (
-                    <Link key={penpal.id} className="flex items-center space-x-3" href={`/penpal/${penpal.id}/history`} onClick={() => handler(penpal.opponentInfo)}>
-                        <span className="font-medium text-lg" style={{color: penpalTextDark}}>
-                            {penpal.opponentInfo.nickname}
-                        </span>
-                    </Link>
+                    <PenpalListItem
+                        key={penpal.id}
+                        penpal={penpal}
+                        penpalTextDark={penpalTextDark}
+                        openMenuId={openMenuId}
+                        toggleMenu={toggleMenu}
+                        handler={handler}
+                        accessToken={accessToken}
+                    />
                 ))}
             </div>
         </div>

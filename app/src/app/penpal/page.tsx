@@ -44,7 +44,7 @@ export default function PenpalApp() {
 
     return (
         <div className="max-w-md mx-auto min-h-screen" style={{backgroundColor: penpalBg}}>
-            <header className="flex justify-between items-center p-4 pt-6">
+            <header className="flex justify-between items-center p-4 pt-8">
                 <span className="text-sm invisible" style={{color: penpalTextLight}}>
                     임시저장함
                 </span>
@@ -57,7 +57,7 @@ export default function PenpalApp() {
                 </Link>
             </header>
 
-            <nav className="grid grid-cols-2 rounded-t-lg overflow-hidden mt-4">
+            <nav className="grid grid-cols-2 rounded-t-lg overflow-hidden mt-3">
                 <button
                     onClick={() => setActiveTab('penpal')}
                     className="py-3 font-bold"

@@ -10,12 +10,12 @@ import logo from "../../public/drch_logo.png";
 
 const Header: React.FC = () => {
     return (
-        <div className="w-full h-fit justify-between flex items-center px-[20px] py-[15px]">
+        <div className="w-full h-fit justify-center flex px-[20px] py-[15px] fixed bg-white">
             <Link href="/">
                 {/* 기존처럼 width만 지정해도 OK (static import라 원본 비율 유지) */}
                 <Image src={logo} alt="Home Button" width={55} priority/>
             </Link>
-            <div className="flex w-[80px] justify-between">
+            {/*<div className="flex w-[80px] justify-between">
                 <div>
                     <SvgIcon component={NotificationsOutlinedIcon} sx={{fontSize: 35}}/>
                     <label className="block text-center font-semibold">알림</label>
@@ -24,7 +24,7 @@ const Header: React.FC = () => {
                     <SvgIcon component={SearchIcon} sx={{fontSize: 35}}/>
                     <label className="block text-center font-semibold">검색</label>
                 </div>
-            </div>
+            </div>*/}
         </div>
     );
 };

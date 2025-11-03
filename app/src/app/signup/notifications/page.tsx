@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
 import { saveTempSignupData, getTempSignupData, clearTempSignupData, UserJoinPayload } from '@/libs/tempSignupData'; 
 
 // --- 색상 변수 ---
@@ -115,7 +114,7 @@ const NotificationsPage = () => {
     return (
         // 1. 페이지 전체
         <div 
-            className="mx-auto w-full max-w-[430px] flex flex-col items-center justify-between flex-1 p-4"
+            className="mx-auto min-h-[calc(100vh-130px)] w-full max-w-[430px] flex flex-col items-center justify-between flex-1 p-4"
             style={{ backgroundColor: Bg }}
         >
             {/* 자식 1: 상단 컨텐츠 영역 (중앙 정렬) */}

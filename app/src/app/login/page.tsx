@@ -65,7 +65,7 @@ const LoginPage = () => {
     return (
         // 1. 전체 페이지 컨테이너
         <div 
-            className="mx-auto w-full max-w-[430px] flex flex-col items-center justify-start min-h-screen p-4"
+            className="mx-auto w-full max-w-[430px] flex flex-col items-center justify-start min-h-[calc(100vh-130px)] p-4"
             style={{ backgroundColor: Bg }}
         >
             {/* 2. 상단 헤더 (임시) */}

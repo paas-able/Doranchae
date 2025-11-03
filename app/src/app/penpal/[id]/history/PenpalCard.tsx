@@ -16,7 +16,7 @@ export default function PenpalCard({content, sentAt, status, isFromUser}: Penpal
 
     const username = isFromUser ? '나' : localStorage.getItem("opponent_nickname")
 
-    const text = status === "READ" ? content : '--- 보낸 날로부터 하루 뒤에 확인할 수 있어요 ---'
+    const text = status === "READ" ? content : '💌보낸 날로부터 하루 뒤에 확인할 수 있어요💌'
 
     return (
         <div

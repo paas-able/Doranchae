@@ -26,11 +26,19 @@ type PageInfo = {
     totalPages: number
 }
 
+type OpponentInfo = {
+    userId: string,
+    nickname: string,
+    interests: string[]
+}
+
 export default function PenpalHistoryPage() {
     const router = useRouter();
     const params = useParams()
-    const url = `http://localhost:8082/api/penpal/${params.id}/messages?page=0&size=1000`
+    const url = `/api/penpal/${params.id}/messages?page=0&size=1000`
     const [accessToken, setAccessToken] = useState<String | null>(null)
+    const [opponent, setOpponent] = useState<OpponentInfo|null>(null)
+
     const getAccessToken = () => {
         const cookies = document.cookie.split(';');
         for (let i = 0; i < cookies.length; i++) {
@@ -42,6 +50,35 @@ export default function PenpalHistoryPage() {
         }
         return null;
     };
+
+    const fetcher = (url: string | null) =>
+        fetch(url, {
+            method: "GET",
+            headers: {"Authorization": `Bearer ${accessToken}`}
+        }).then((res) => {
+            return res.json()
+        }).then((it) => {
+            if (it.isSuccess) {
+                return it.data
+            } else {
+                throw new Error('문제가 발생했습니다.');
+            }
+        })
+
+    const getOpponentInfo = () => {
+        const opponentId = localStorage.getItem("opponent_id")
+        const url = accessToken ? `/api/user/${opponentId}` : null
+        fetcher(url)
+            .then(r => {
+                const opponent = {
+                    userId: r.userId,
+                    nickname: r.nickname,
+                    interests: r.interests
+                }
+                console.log(opponent)
+                setOpponent(opponent)
+            })
+    }
 
     useEffect(() => {
         const token = getAccessToken();
@@ -55,19 +92,11 @@ export default function PenpalHistoryPage() {
         }
     }, []);
 
-    const fetcher = (url: string) =>
-        fetch(url, {
-            method: "GET",
-            headers: {"Authorization": `Bearer ${accessToken}`}
-        }).then((res) => {
-            return res.json()
-        }).then((it) => {
-            if (it.isSuccess) {
-                return it.data
-            } else {
-                throw new Error('문제가 발생했습니다.');
-            }
-        })
+    useEffect(() => {
+        if (accessToken) {
+            getOpponentInfo()
+        }
+    }, [accessToken]);
 
     const {
         data,
@@ -82,7 +111,7 @@ export default function PenpalHistoryPage() {
     const opponent_nickname = localStorage.getItem("opponent_nickname")
 
     return (
-        <div className="flex h-dvh flex-col bg-[#FDFAE3] z-0 overscroll-none">
+        <div className="flex h-dvh flex-col bg-[#FDFAE3] z-0 overscroll-none pt-3">
             <header className="flex items-center justify-between bg-[#FDFAE3] p-4">
                 <Link href={"/penpal"} className="text-gray-600">뒤로가기</Link>
             </header>
@@ -95,9 +124,11 @@ export default function PenpalHistoryPage() {
                         </div>
                         <div>
                             <p className="font-bold">
-                                {`${opponent_nickname}`}
+                                {`${opponent?.nickname}`}
                             </p>
-                            <p className="text-sm text-gray-600">#원예 #경제 #동산</p>
+                            <p className="text-sm text-gray-600">
+                                {`#${opponent?.interests[0]} #${opponent?.interests[1]} #${opponent?.interests[2]}`}
+                            </p>
                         </div>
                     </div>
                 </section>

@@ -80,14 +80,14 @@ export default function PenpalWritePage() {
             };
 
             const data = await sendPenpalFetcher(
-                'http://localhost:8082/api/penpal/send',
+                '/api/penpal/send',
                 accessToken!!,
                 sendBody
             );
 
             console.log("전송 성공:", data);
             alert("편지 전송 성공!");
-            // TODO: 성공 후 페이지 이동 로직 추가 (예: router.push('/home'))
+            router.push('/penpal')
 
         } catch (error) {
             console.error("전송 실패:", error);
