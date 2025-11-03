@@ -107,7 +107,7 @@ const MyPage = () => {
     const genderText = gender === '남자' ? '남성' : gender === '여자' ? '여성' : '선택안함';
 
     return (
-        <div className="mx-auto w-full max-w-[430px] flex flex-col flex-1 p-2" style={{ backgroundColor: Bg }}>
+        <div className="mx-auto w-full max-w-[430px] flex flex-col flex-1 p-2 min-h-[calc(100vh-130px)]" style={{ backgroundColor: Bg }}>
             {/* 상단 '내 정보' 섹션 */}
 
             <div className="w-full bg-[#FDFAED] rounded-lg p-3 " > 

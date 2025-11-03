@@ -12,4 +12,8 @@ data class MessageStatus(val status: Status) {
         // TODO: 예외 처리
         return this.copy(status = newStatus)
     }
+
+    fun getName(): String {
+        return this.status.name
+    }
 }

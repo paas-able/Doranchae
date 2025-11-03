@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { saveTempSignupData, getTempSignupData, UserJoinPayload } from '@/libs/tempSignupData';
+import { saveTempSignupData, UserJoinPayload } from '@/libs/tempSignupData';
 
 // --- 색상 변수 ---
 const Bg = "#FDFAED";
@@ -77,7 +77,7 @@ const InterestsPage = () => {
     return (
         // 1. 페이지 전체 (flex-1 + justify-between)
         <div 
-            className="mx-auto w-full max-w-[430px] flex flex-col items-center justify-between flex-1 p-4"
+            className="mx-auto w-full min-h-[calc(100vh-130px)] max-w-[430px] flex flex-col items-center justify-between p-4"
             style={{ backgroundColor: Bg }}
         >
             {/* 자식 1: 상단 컨텐츠 영역 */}
@@ -111,7 +111,7 @@ const InterestsPage = () => {
             </div>
 
             {/* 자식 2: 하단 '다음' 버튼 영역 */}
-            <div className="w-full max-w-sm flex flex-col pb-6">
+            <div className="w-full max-w-sm flex flex-col pb-6 mt-10">
                 <button 
                     type="button"
                     onClick={handleNext}

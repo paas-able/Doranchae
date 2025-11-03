@@ -1,16 +1,11 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation'; 
 import { saveTempSignupData, getTempSignupData, UserJoinPayload } from '@/libs/tempSignupData';
 
 // --- 색상 변수 ---
 const Bg = "#FDFAED";
-const M1 = "#CCA57A";
-const M2 = "#F8EDD0";
-const M3 = "#FDFAE3";
-const M4 = "#EAEDCC";
 const M5 = "#CED5B2";
 const MM = "#8B9744";
 // ---------------------
@@ -63,7 +58,7 @@ const SignupPage = () => {
     return (
         // 1. 부모 Div: justify-between, flex-1
         <div 
-            className="mx-auto w-full max-w-[430px] flex flex-col items-center justify-between flex-1 p-4"
+            className="mx-auto w-full max-w-[430px] flex flex-col items-center justify-between flex-1 p-4 min-h-[calc(100vh-130px)]"
             style={{ backgroundColor: Bg }}
         >
             
