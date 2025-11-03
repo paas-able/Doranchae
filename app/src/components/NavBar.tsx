@@ -17,6 +17,7 @@ import ieumi from '../../public/ieumi.png'
 
 const BottomNav: React.FC = () => {
     const pathname = usePathname()
+    console.log(`pathname: ${pathname}`)
 
     return (
         <div className="fixed bottom-0 w-full h-fit">
@@ -24,11 +25,11 @@ const BottomNav: React.FC = () => {
                 {/*왼쪽 아이콘 묶음*/}
                 <div className="flex justify-between w-[125px]">
                     <Link href="/welfare" className="flex flex-col items-center">
-                        <SvgIcon className="" component={ pathname === '/welfare' ? InfoRoundedIcon : InfoOutlineRoundedIcon} sx={{ fontSize: 30 }}/>
+                        <SvgIcon className="" component={ pathname.includes('/welfare') ? InfoRoundedIcon : InfoOutlineRoundedIcon} sx={{ fontSize: 30 }}/>
                         <label className="block font-semibold">복지 정보</label>
                     </Link>
                     <Link href="/penpal" className="flex flex-col items-center">
-                        <SvgIcon className="" component={ pathname === '/penpal' ? EmailIcon : EmailOutlinedIcon } sx={{ fontSize: 30 }}/>
+                        <SvgIcon className="" component={ pathname.includes('/penpal') ? EmailIcon : EmailOutlinedIcon } sx={{ fontSize: 30 }}/>
                         <label className="block font-semibold">펜팔</label>
                     </Link>
                 </div>
@@ -41,11 +42,11 @@ const BottomNav: React.FC = () => {
                 {/*오른쪽 아이콘 묶음*/}
                 <div className="flex justify-between w-[125px]">
                     <Link href="/community" className="flex flex-col items-center">
-                        <SvgIcon className="" component={ pathname === '/community' ? ArticleIcon : ArticleOutlinedIcon} sx={{ fontSize: 30 }}/>
+                        <SvgIcon className="" component={ pathname.includes('/community') ? ArticleIcon : ArticleOutlinedIcon} sx={{ fontSize: 30 }}/>
                         <label className="block font-semibold">커뮤니티</label>
                     </Link>
                     <Link href="/mypage" className="flex flex-col items-center">
-                        <SvgIcon className="" component={ pathname === '/mypage' ? AccountCircleIcon : AccountCircleOutlinedIcon } sx={{ fontSize: 30 }}/>
+                        <SvgIcon className="" component={ pathname.includes('/mypage') ? AccountCircleIcon : AccountCircleOutlinedIcon } sx={{ fontSize: 30 }}/>
                         <label className="block font-semibold">내 정보</label>
                     </Link>
                 </div>

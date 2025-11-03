@@ -57,7 +57,7 @@ const GuardianPage = () => {
     return (
         // 1. 페이지 전체 (flex-1 + justify-between)
         <div 
-            className="mx-auto w-full max-w-[430px] flex flex-col items-center justify-between flex-1 p-4"
+            className="mx-auto min-h-[calc(100vh-130px)] w-full max-w-[430px] flex flex-col items-center justify-between p-4"
             style={{ backgroundColor: Bg }}
         >
             {/* 자식 1: 상단 컨텐츠 영역 */}
