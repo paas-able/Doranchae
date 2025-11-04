@@ -82,7 +82,11 @@ class CommunityController(
         val authorInfo = communityService.retrieveUserInfo(post.authorId)
 
         val postDto = PostInfo(postId = post.id, title = post.title, content = post.content, likes = post.likes, createdAt = post.createdAt, isEdited = post.isEdited)
-        val authorDto = AuthorInfo(userId = authorInfo.userId, name = authorInfo.nickname)
+
+        val authorIdStr = authorInfo.userId.toString()
+        val userId = userDetails.userId
+        val authorDto = AuthorInfo(userId = authorInfo.userId, name = authorInfo.nickname, isMe = authorIdStr == userId)
+
         val responseDto = RetrievePostResponse(post = postDto, author = authorDto, isLiked = isLike)
         return ApiResponse.success(responseDto)
     }
@@ -113,7 +117,9 @@ class CommunityController(
         } else {
             val formattedList = commentList.map {
                 val author = communityService.retrieveUserInfo(it.authorId)
-                val authorInfo = AuthorInfo(userId = author.userId, name = author.nickname)
+                val authorIdStr = author.userId.toString()
+                val userId = userDetails.userId
+                val authorInfo = AuthorInfo(userId = author.userId, name = author.nickname, isMe = authorIdStr == userId)
                 FormattedComment(id = it.id, parentId = it.parentId, author = authorInfo, content = it.content, createdAt = it.createdAt, isAuthor = (it.authorId == UUID.fromString(userDetails.userId)))
             }
             RetrieveCommentsResponse(comments = formattedList)
@@ -174,7 +180,8 @@ data class PostInfo (
 
 data class AuthorInfo (
     val userId: UUID,
-    val name: String
+    val name: String,
+    val isMe: Boolean
 )
 
 data class CreateCommentRequest (

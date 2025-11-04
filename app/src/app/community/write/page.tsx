@@ -3,6 +3,7 @@
 import React from "react";
 import {useRouter} from "next/navigation";
 import {useState} from "react";
+import {fetchWithAuth} from "@libs/fetchWithAuth";
 
 export default function CommunityWritePage() {
     const router = useRouter();
@@ -17,7 +18,15 @@ export default function CommunityWritePage() {
         if (!isValid || submitting) return;
 
         setSubmitting(true);
-        console.log("[communityWrite] payload:", {title, content});
+        fetchWithAuth('/api/community/posts', {
+            method: 'POST',
+            body: JSON.stringify({ title: title, content: content })
+        }).then(res => {
+            if (res.isSuccess) {
+                alert("글 작성을 완료했습니다.")
+                router.push("/community")
+            }
+        })
 
         setTimeout(() => {
             setSubmitting(false);
@@ -32,7 +41,7 @@ export default function CommunityWritePage() {
                 {/* 카드 컨테이너 */}
                 <section className="mt-4 flex flex-col flex-1">
                     {/* 타이틀 바 */}
-                    <div className="flex items-center justify-between px-4 py-4 border-b border-neutral-200">
+                    <div className="flex items-center justify-between px-4 py-4">
                         <button
                             type="button"
                             onClick={() => router.back()}
