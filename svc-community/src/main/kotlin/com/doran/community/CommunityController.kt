@@ -137,6 +137,21 @@ class CommunityController(
             throw CustomException(ErrorCode.COMMON_INTERNAL_ERROR)
         }
     }
+
+    @GetMapping("/post/recent")
+    fun recentPost(@AuthenticationPrincipal userDetails: CustomUserDetails):  ResponseEntity<DataResponse<RecentPostResponse>>{
+        val post = communityService.retrieveRecentPost()
+
+        val commentCount = communityService.retrieveCommentsCount(post.id)
+        val contentPreview: String = if (post.content.length > 20) {
+            post.content.substring(0,20)
+        } else {
+            post.content
+        }
+
+        val responseDto = RecentPostResponse(id = post.id, title = post.title, contentPreview = contentPreview, commentCount = commentCount)
+        return ApiResponse.success(responseDto)
+    }
 }
 
 /* Data Class */
@@ -218,5 +233,12 @@ data class FormattedPost (
     val contentPreview: String,
     val createdAt: LocalDateTime,
     val likeCount: Int,
+    val commentCount: Int
+)
+
+data class RecentPostResponse (
+    val id: UUID,
+    val title: String,
+    val contentPreview: String,
     val commentCount: Int
 )

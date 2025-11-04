@@ -176,4 +176,9 @@ class CommunityService(
         val response: DataResponse<UserInfoDetail> = userServiceClient.getUserInfo(userId)
         return response.data!!
     }
+
+    @Transactional
+    fun retrieveRecentPost(): Post {
+        return postRepository.findTopByOrderByCreatedAtDesc()
+    }
 }

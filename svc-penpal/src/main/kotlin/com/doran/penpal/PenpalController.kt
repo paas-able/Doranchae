@@ -88,6 +88,21 @@ class PenpalController(
             throw CustomException(ErrorCode.COMMON_INTERNAL_ERROR)
         }
     }
+
+    @GetMapping("/recent")
+    fun retrieveRecentPenpal(@AuthenticationPrincipal userDetails: CustomUserDetails): ResponseEntity<DataResponse<List<RecentPenpalMessage>>> {
+        val penpalList = penpalService.retrieveUsersPenpal(UUID.fromString(userDetails.userId))
+        val responseDto: List<RecentPenpalMessage> = if (!penpalList.isEmpty()) {
+            penpalList.map { it ->
+                val sender = penpalService.retrieveUserInfo(it.sendFrom)
+                RecentPenpalMessage(penpalId = it.penpal.id, content = it.content, sendFromInfo = sender!!)
+            }
+        } else {
+            emptyList()
+        }
+
+        return ApiResponse.success(responseDto)
+    }
 }
 
 /*Data Class*/
@@ -130,6 +145,12 @@ data class PenpalMesssageInfo (
     val sentAt: LocalDateTime,
     val status: String,
     val isFromUser: Boolean, // 송수신 여부
+)
+
+data class RecentPenpalMessage (
+    val penpalId: UUID,
+    val content: String,
+    val sendFromInfo: UserInfoDetail
 )
 
 /*Function*/

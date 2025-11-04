@@ -174,7 +174,7 @@ export default function CommunityDetailPage({ params }: PostDetailPageProps) {
     }
 
     return (
-        <div className="mx-auto w-full max-w-[430px] flex flex-col flex-1 min-h-[calc(100vh-130px)]">
+        <div className="mx-auto w-full max-w-[430px] flex flex-col flex-1 h-[calc(100vh-130px)]">
             {/* 본문 */}
             <main className="flex-1 px-4">
                 <section className="mt-4 flex flex-col">
@@ -182,7 +182,7 @@ export default function CommunityDetailPage({ params }: PostDetailPageProps) {
                     <div className="mb-3">
                         <button
                             type="button"
-                            onClick={() => router.push('/community')}
+                            onClick={() => router.back()}
                             className="text-sm"
                             style={{color: "#808080"}}
                         >

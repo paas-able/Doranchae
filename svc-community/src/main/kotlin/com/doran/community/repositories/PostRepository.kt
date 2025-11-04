@@ -7,4 +7,5 @@ import java.util.UUID
 
 @Repository
 interface PostRepository: JpaRepository<Post, UUID> {
+    fun findTopByOrderByCreatedAtDesc(): Post
 }
