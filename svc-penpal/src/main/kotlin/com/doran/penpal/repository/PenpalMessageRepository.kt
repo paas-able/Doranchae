@@ -12,4 +12,5 @@ import java.util.UUID
 interface PenpalMessageRepository: JpaRepository<PenpalMessage, UUID> {
     fun findAllByPenpal(penpal: Penpal, pageable: Pageable): Page<PenpalMessage>
     fun deleteAllByPenpal(penpal: Penpal)
+    fun findAllBySendToOrderByCreatedAtDesc(userId: UUID): List<PenpalMessage>
 }

@@ -17,7 +17,6 @@ import ieumi from '../../public/ieumi.png'
 
 const BottomNav: React.FC = () => {
     const pathname = usePathname()
-    console.log(`pathname: ${pathname}`)
 
     return (
         <div className="fixed bottom-0 w-full h-fit">

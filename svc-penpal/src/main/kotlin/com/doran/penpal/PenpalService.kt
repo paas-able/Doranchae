@@ -145,4 +145,9 @@ class PenpalService(
             throw CustomException(ErrorCode.COMMON_INTERNAL_ERROR)
         }
     }
+
+    @Transactional
+    fun retrieveUsersPenpal(userId: UUID): List<PenpalMessage> {
+        return penpalMessageRepository.findAllBySendToOrderByCreatedAtDesc(userId = userId)
+    }
 }

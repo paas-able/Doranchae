@@ -3,33 +3,15 @@
 import React, {useEffect, useMemo, useRef, useState} from "react";
 import Link from "next/link";
 import {useRouter} from "next/navigation";
+import {fetchWithAuth} from "@libs/fetchWithAuth";
 
 type PostCard = {
     id: string;
     title: string;
-    preview: string;
-    time: string;
-    comments: number;
+    contentPreview: string;
+    createdAt: string;
+    commentCount: number;
 };
-
-const MOCK_POSTS: PostCard[] = [
-    {
-        id: "1",
-        title: "나랑 송가인 콘서트 갈 친구",
-        preview: "이번에 콘서트 첨 가는데 혼자 가서 같이 갈 사람 구해봅니다. 팬카페 가입 인증 받습니다.",
-        time: "11:23",
-        comments: 2
-    },
-    {id: "2", title: "동네 국밥 맛집 추천해주세요", preview: "든든하게 한 끼 하고 싶어요. 가격 착하면 더 좋아요!", time: "10:08", comments: 5},
-    {id: "3", title: "아침 산책 같이 하실 분", preview: "매일 7시에 한강 둔치 걷습니다. 초보 환영!", time: "09:41", comments: 0},
-    ...Array.from({length: 20}).map((_, i) => ({
-        id: `more-${i + 4}`,
-        title: `나랑 송가인 콘서트 갈 친구 #${i + 4}`,
-        preview: "이번에 콘서트 첨 가는데 혼자 가서 같이 갈 사람 구해봅니다. 팬카페 가입 인증 받습니다.",
-        time: `11:${String((23 + i) % 60).padStart(2, "0")}`,
-        comments: (i * 3) % 9,
-    })),
-];
 
 const CARD = "#F8EDD0";
 const TEXT_MID = "#666666";
@@ -41,34 +23,23 @@ const ICON_PENCIL = "https://cdn-icons-png.flaticon.com/512/1828/1828919.png";
 
 export default function CommunityPage() {
     const router = useRouter();
-    const [accessToken, setAccessToken] = useState<String | null>(null)
-    const getAccessToken = () => {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            // 'accessToken='로 시작하는 쿠키를 찾습니다.
-            if (cookie.startsWith('accessToken=')) {
-                return cookie.substring('accessToken='.length);
-            }
-        }
-        return null;
-    };
 
+    const [posts, setPosts] = useState<PostCard[]>([])
     useEffect(() => {
-        const token = getAccessToken();
-        if (!token) {
-            // 토큰이 없다면 바로 로그인 페이지로 이동시키거나 오류 처리
-            console.error("인증 토큰이 쿠키에 없습니다. 로그인 필요.");
-            router.push('/login'); // useRouter가 MyPage에 임포트되어 있어야 합니다.
-            return;
-        } else {
-            setAccessToken(token)
+        const fetchData = async () => {
+            fetchWithAuth('/api/community/posts')
+                .then(res => {
+                    if (res.isSuccess) {
+                        return res.data
+                    }
+                })
+                .then(data => {
+                    setPosts(data.posts)
+                })
         }
-    }, []);
 
-    /*useEffect(() => {
-        fetch('/community/')
-    }, [accessToken]);*/
+        fetchData()
+    }, []);
 
     // 검색 상태
     const [searchOpen, setSearchOpen] = useState(false);
@@ -80,12 +51,12 @@ export default function CommunityPage() {
     const sentinelRef = useRef<HTMLDivElement | null>(null);
 
     const filtered = useMemo(() => {
-        if (!query.trim()) return MOCK_POSTS;
-        const q = query.trim().toLowerCase();
-        return MOCK_POSTS.filter(
-            (p) => p.title.toLowerCase().includes(q) || p.preview.toLowerCase().includes(q)
+        if (!query.trim()) return posts;
+        const q = query.trim();
+        return posts.filter(
+            (p) => p.title.includes(q) || p.contentPreview.includes(q)
         );
-    }, [query]);
+    }, [query, posts]);
 
     useEffect(() => {
         setVisible(STEP);
@@ -185,15 +156,15 @@ export default function CommunityPage() {
                                 <div className="flex items-start justify-between">
                                     <h2 className="text-[20px] font-extrabold leading-tight">{post.title}</h2>
                                     <time className="ml-3 shrink-0 text-[14px]" style={{color: "#808080"}}>
-                                        {post.time}
+                                        {post.createdAt.split('T')[0]}
                                     </time>
                                 </div>
 
-                                <p className="mt-3 text-[16px] leading-7">{post.preview}</p>
+                                <p className="mt-3 text-[16px] leading-7">{post.contentPreview}</p>
 
                                 <div className="mt-3 flex items-center justify-end gap-2">
                                     <img src={ICON_CHAT} alt="댓글" className="h-[18px] w-[18px] opacity-80"/>
-                                    <span className="text-[15px]">{post.comments}</span>
+                                    <span className="text-[15px]">{post.commentCount}</span>
                                 </div>
                             </article>
                         </Link>
@@ -206,12 +177,12 @@ export default function CommunityPage() {
             <button
                 type="button"
                 aria-label="글쓰기"
-                onClick={() => router.push("/community/communityWrite")}
+                onClick={() => router.push("/community/write")}
                 className="fixed right-6 z-30 flex h-14 w-14 items-center justify-center rounded-full shadow-lg active:scale-95 transition"
                 style={{
                     backgroundColor: "#8B9744",
                     boxShadow: "0 6px 12px rgba(0,0,0,0.15)",
-                    bottom: "calc(env(safe-area-inset-bottom) + 16px)",
+                    bottom: "calc(env(safe-area-inset-bottom) + 80px)",
                 }}
             >
                 <img src={ICON_PENCIL} alt="글쓰기" className="h-6 w-6 invert"/>
