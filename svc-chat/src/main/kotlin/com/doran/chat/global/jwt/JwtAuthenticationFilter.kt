@@ -5,10 +5,17 @@ import org.springframework.web.filter.OncePerRequestFilter
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
+import org.springframework.util.AntPathMatcher
 
 class JwtAuthenticationFilter(
     private val jwtTokenProvider: JwtTokenProvider
 ) : OncePerRequestFilter() {
+
+    private val pathMatcher = AntPathMatcher()
+    override fun shouldNotFilter(request: HttpServletRequest): Boolean {
+        val path = request.servletPath
+        return pathMatcher.match("/ws-chat/**", path)
+    }
 
     override fun doFilterInternal(
         request: HttpServletRequest,
@@ -16,9 +23,9 @@ class JwtAuthenticationFilter(
         filterChain: FilterChain
     ) {
         val bearerToken = request.getHeader("Authorization")
-        val token = jwtTokenProvider.resolveToken(bearerToken)
 
         try {
+            val token = jwtTokenProvider.resolveToken(bearerToken)
             if (token != null) {
                 val authentication = jwtTokenProvider.getAuthentication(token)
                 SecurityContextHolder.getContext().authentication = authentication
