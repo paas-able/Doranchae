@@ -1,15 +1,9 @@
 "use client";
 
 import React, {useEffect, useState} from "react";
-import {useRouter} from "next/navigation";
+import {useParams, useRouter} from "next/navigation";
 import {fetchWithAuth} from "@libs/fetchWithAuth";
 import CommentItem from "@components/CommentItem";
-
-interface PostDetailPageProps {
-    params: {
-        id: string;
-    };
-}
 
 interface PostDetail {
     title: string,
@@ -44,8 +38,9 @@ type NestedComment = Comment & {
     replies: NestedComment[];
 };
 
-export default function CommunityDetailPage({ params }: PostDetailPageProps) {
+export default function CommunityDetailPage() {
     const router = useRouter();
+    const params = useParams<{id: string}>()
     const [liked, setLiked] = useState(false);
     const [likeCount, setLikeCount] = useState(0)
     const [comment, setComment] = useState("")
@@ -176,7 +171,7 @@ export default function CommunityDetailPage({ params }: PostDetailPageProps) {
     return (
         <div className="mx-auto w-full max-w-[430px] flex flex-col flex-1 h-[calc(100vh-130px)]">
             {/* 본문 */}
-            <main className="flex-1 px-4">
+            <main className="flex-1 px-4 pb-[90px]">
                 <section className="mt-4 flex flex-col">
                     {/* 뒤로가기 */}
                     <div className="mb-3">
@@ -267,37 +262,36 @@ export default function CommunityDetailPage({ params }: PostDetailPageProps) {
                             />
                         ))}
                     </ul>
-
-                    {/* 댓글 입력 */}
-                    <form onSubmit={submitComment} className="sticky bottom-[80px] pt-2">
-                        <div
-                            className="flex items-center justify-between rounded-full pl-4 pr-2 py-3 shadow"
-                            style={{
-                                backgroundColor: "#FDFAE3",
-                                border: "1px solid #CED5B2",
-                            }}
-                        >
-                            <input
-                                type="text"
-                                value={comment}
-                                onChange={(e) => setComment(e.target.value)}
-                                placeholder="댓글 입력하기"
-                                className="flex-1 bg-transparent outline-none text-[15px] mr-3"
-                            />
-                            <button
-                                type="submit"
-                                disabled={!comment.trim()}
-                                className="px-3 py-2 text-sm font-semibold disabled:opacity-50"
-                                style={{
-                                    color: comment.trim() ? "#8B9744" : "#B3B3B3",
-                                }}
-                            >
-                                ➤
-                            </button>
-                        </div>
-                    </form>
                 </section>
             </main>
+            {/* 댓글 입력 */}
+            <form onSubmit={submitComment} className="sticky bottom-[70px] p-4 pb-8 bg-white">
+                <div
+                    className="flex items-center justify-between rounded-full pl-4 pr-2 py-3 shadow"
+                    style={{
+                        backgroundColor: "#FDFAE3",
+                        border: "1px solid #CED5B2",
+                    }}
+                >
+                    <input
+                        type="text"
+                        value={comment}
+                        onChange={(e) => setComment(e.target.value)}
+                        placeholder="댓글 입력하기"
+                        className="flex-1 bg-transparent outline-none text-[15px] mr-3"
+                    />
+                    <button
+                        type="submit"
+                        disabled={!comment.trim()}
+                        className="px-3 py-2 text-sm font-semibold disabled:opacity-50"
+                        style={{
+                            color: comment.trim() ? "#8B9744" : "#B3B3B3",
+                        }}
+                    >
+                        ➤
+                    </button>
+                </div>
+            </form>
         </div>
     );
 }
