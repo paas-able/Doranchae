@@ -68,7 +68,7 @@ export default function Home() {
                 <p className={"px-3 font-semibold text-[30px]"}>편지함</p>
                 <div className={"w-full h-[300px] bg-green1 pl-4 py-5 flex overscroll-y-auto overflow-auto gap-3"}>
                     {penpalList?.map(it => (
-                        <PenpalCard key={it.penpalId} penpal={it}/>
+                        <PenpalCard key={it.id} penpal={it}/>
                     ))}
                 </div>
             </div>

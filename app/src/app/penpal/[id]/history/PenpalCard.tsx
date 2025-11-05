@@ -1,10 +1,10 @@
 // app/penpal/[id]/PenpalCard.tsx
 'use client'
 type PenpalCardProps = {
-    text: string;
-    from: string;
-    isSent: boolean;
-    timestamp: string;
+    content: string;  // text -> content
+    sentAt: string;   // timestamp -> sentAt
+    status: string;
+    isFromUser: boolean; // isSent -> isFromUser
 };
 
 export default function PenpalCard({content, sentAt, status, isFromUser}: PenpalCardProps) {
@@ -14,7 +14,7 @@ export default function PenpalCard({content, sentAt, status, isFromUser}: Penpal
     // isSent 값에 따라 스타일을 다르게 적용
     const cardClasses = isFromUser ? 'self-end bg-[#F8EDD0]' : 'self-start bg-[#EAEDCC]';
 
-    const username = isFromUser ? '나' : localStorage.getItem("opponent_nickname")
+    const username = isFromUser ? '나' : (typeof window !== 'undefined' ? localStorage.getItem("opponent_nickname") : ''); // [!!] localStorage 접근 보호
 
     const text = (status === "READ" || isFromUser) ? content : '💌보낸 날로부터 하루 뒤에 확인할 수 있어요💌'
 

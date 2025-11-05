@@ -28,17 +28,20 @@ interface CommentItemProps {
 
 const CommentItem: React.FC<CommentItemProps> = ({comment, depth, activeReplyId, setActiveReplyId, submitHandler}) => {
     const [reply, setReply] = useState("")
-    const marginClass = depth > 0 ? `ml-${depth * 6}` : ''; // 깊이에 따라 마진 적용
+    // [!!] marginClass는 JSX에서 ${} 안에 사용되므로 const로 유지합니다.
+    const marginClass = depth > 0 ? `ml-${depth * 6}` : ''; 
 
     const isReplyActive = activeReplyId === comment.id;
     const isTopLevel = depth === 0;
-    const handleReplyClick = (commentId) => {
+    
+    const handleReplyClick = (commentId: string) => { 
         if (setActiveReplyId) {
             setActiveReplyId(isReplyActive ? null : commentId)
         }
     }
 
-    const handleReplySubmit = () => {
+    const handleReplySubmit = (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault(); 
         if (submitHandler) {
             submitHandler(reply, comment.id)
             setReply("")
@@ -57,11 +60,6 @@ const CommentItem: React.FC<CommentItemProps> = ({comment, depth, activeReplyId,
                         <p className={"text-[15px] font-medium mx-2"}>{comment.author.name}</p>
                         <p className={"text-xs"}>{comment.createdAt.split('T')[0]}</p>
                     </div>
-                    {/*<div className={"text-[15px] font-medium"}>
-                        <button>수정</button>
-                        {" | "}
-                        <button>삭제</button>
-                    </div>*/}
                 </div>
                 <div className={"my-2.5 text-[16px] font-medium"}>{comment.content}</div>
                 { isTopLevel ?
@@ -107,7 +105,15 @@ const CommentItem: React.FC<CommentItemProps> = ({comment, depth, activeReplyId,
             {comment.replies.length > 0 && (
                 <ul>
                     {comment.replies.map(reply => (
-                        <CommentItem key={reply.id} comment={reply} depth={depth + 1} activeReplyId={null} setActiveReplyId={null} submitHandler={null}/>
+                        <CommentItem 
+                            key={reply.id} 
+                            comment={reply} 
+                            depth={depth + 1} 
+                            // [!!] null 대신 undefined를 사용하여 Prop 생략
+                            activeReplyId={undefined} 
+                            setActiveReplyId={undefined} 
+                            submitHandler={undefined}
+                        />
                     ))}
                 </ul>
             )}

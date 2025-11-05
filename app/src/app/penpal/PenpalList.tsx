@@ -1,4 +1,4 @@
-'use client'
+"use client"
 
 import useSWR from 'swr'
 import {useEffect, useState} from "react";
@@ -39,7 +39,7 @@ export function PenpalList() {
     const toggleMenu = (id: number) => {
         setOpenMenuId(prevId => (prevId === id ? null : id));
     };
-    const [accessToken, setAccessToken] = useState<String | null>(null)
+    const [accessToken, setAccessToken] = useState<string | null>(null)
     const getAccessToken = () => {
         const cookies = document.cookie.split(';');
         for (let i = 0; i < cookies.length; i++) {
@@ -91,7 +91,7 @@ export function PenpalList() {
     if (!data) return null
 
 
-    const handler = (opponent) => {
+    const handler = (opponent: OpponentInfo) => {
         localStorage.setItem('opponent_id', opponent.userId)
     }
 
@@ -109,7 +109,8 @@ export function PenpalList() {
                         openMenuId={openMenuId}
                         toggleMenu={toggleMenu}
                         handler={handler}
-                        accessToken={accessToken}
+                        // [!!] 오류 해결: accessToken Prop을 추가합니다.
+                        accessToken={accessToken} 
                     />
                 ))}
             </div>

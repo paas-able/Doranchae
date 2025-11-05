@@ -3,21 +3,38 @@
 import {useEffect, useState} from 'react';
 import Link from "next/link";
 import {useRouter} from "next/navigation";
+import React from 'react';
+
+// PenpalList.tsx 파일에 정의된 타입들 (부모에서 정의되었다고 가정)
+type OpponentInfo = {
+    userId: string,
+    nickname: string,
+    birthDate: string,
+    gender: string,
+    interests: string[]
+}
+
+type Penpal = {
+    id: number;
+    opponentInfo: OpponentInfo
+}
 
 interface PenpalListItemProps {
     penpal: Penpal;
     penpalTextDark: string;
-    // 부모로부터 현재 열린 메뉴 ID와 토글 함수를 받습니다.
     openMenuId: number | null;
     toggleMenu: (id: number) => void;
     handler: (opponent: OpponentInfo) => void;
+    // [!!] accessToken Prop을 다시 포함합니다. (이게 부모와 자식 간의 타입 계약입니다)
+    accessToken: string | null; 
 }
 
 interface DropdownMenuProps {
-    penpalId: string;
-    accessToken: string | null; // 토큰이 null일 가능성도 있으므로 타입 설정
+    penpalId: number;
+    accessToken: string | null;
 }
 
+// DropdownMenu가 액세스 토큰을 사용합니다.
 const DropdownMenu = ({penpalId, accessToken} : DropdownMenuProps) => {
     const router = useRouter()
     const [msgCount, setMsgCount] = useState(0)
@@ -40,7 +57,9 @@ const DropdownMenu = ({penpalId, accessToken} : DropdownMenuProps) => {
     }
 
     useEffect(() => {
-        fetch(`/api/penpal/${penpalId}/messages`, {
+        const penpalIdStr = String(penpalId); 
+        
+        fetch(`/api/penpal/${penpalIdStr}/messages`, {
             method: 'GET',
             headers: {
                 "Authorization": `Bearer ${accessToken}`
@@ -54,7 +73,7 @@ const DropdownMenu = ({penpalId, accessToken} : DropdownMenuProps) => {
                 setCanClick(count >= 3)
             }
         })
-    }, []);
+    }, [penpalId, accessToken]);
 
     return (
         <div className="absolute top-0 right-0 mt-2 min-w-48 bg-white border border-gray-200 rounded-md shadow-lg z-10">
@@ -74,6 +93,7 @@ const DropdownMenu = ({penpalId, accessToken} : DropdownMenuProps) => {
     );
 };
 
+// [!!] accessToken을 Props로 받도록 수정
 export default function PenpalListItem({ penpal, penpalTextDark, openMenuId, toggleMenu, handler, accessToken }: PenpalListItemProps) {
     const isMenuOpen = openMenuId === penpal.id;
 

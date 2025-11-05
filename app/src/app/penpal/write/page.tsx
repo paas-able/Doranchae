@@ -1,24 +1,24 @@
-'use client'
+"use client"
 
 import React, {useEffect, useState} from "react";
 import {useRouter, useSearchParams} from 'next/navigation';
+// [!!] 경로 수정: src/libs/fetchWithAuth -> 상대 경로 (3단계 위)
+import { fetchWithAuth } from "../../../libs/fetchWithAuth"; 
 
-const sendPenpalFetcher = async (url: string, token: string, data: { sendTo: String | null; content: string }) => {
+// [!!] String 대신 string 원시 타입을 사용합니다.
+const sendPenpalFetcher = async (url: string, token: string, data: { sendTo: string | null; content: string }) => {
     const response = await fetch(url, {
         method: 'POST',
         headers: {
-            "Content-Type": "application/json", // JSON 데이터임을 명시
-            "Authorization": `Bearer ${token}` // 'Authentication' 대신 'Authorization'을 일반적으로 사용
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}` 
         },
         body: JSON.stringify(data)
     });
 
     if (!response.ok) {
-        // 서버에서 에러 응답이 오면 예외 발생
         throw new Error(`Failed to send penpal: ${response.statusText}`);
     }
-
-    // 성공적으로 전송되면 응답 본문(JSON) 반환
     return response.json();
 }
 
@@ -27,10 +27,14 @@ export default function PenpalWritePage() {
     const params = useSearchParams()
     const targetType = params.get('target');
     const [sendToView, setSendToView] = useState("로딩 중")
-    const [sendTo, setSendTo] = useState<String|null>("로딩 중")
+    // string 원시 타입으로 수정
+    const [sendTo, setSendTo] = useState<string | null>("로딩 중") 
     const [penpalContent, setPenpalContent] = useState("")
     const [isSending, setIsSending] = useState(false)
-    const [accessToken, setAccessToken] = useState<String | null>(null)
+    // string 원시 타입으로 수정
+    const [accessToken, setAccessToken] = useState<string | null>(null)
+    
+    // ... (getAccessToken 유지) ...
     const getAccessToken = () => {
         const cookies = document.cookie.split(';');
         for (let i = 0; i < cookies.length; i++) {
@@ -46,9 +50,8 @@ export default function PenpalWritePage() {
     useEffect(() => {
         const token = getAccessToken();
         if (!token) {
-            // 토큰이 없다면 바로 로그인 페이지로 이동시키거나 오류 처리
             console.error("인증 토큰이 쿠키에 없습니다. 로그인 필요.");
-            router.push('/login'); // useRouter가 MyPage에 임포트되어 있어야 합니다.
+            router.push('/login'); 
             return;
         } else {
             setAccessToken(token)
@@ -60,10 +63,15 @@ export default function PenpalWritePage() {
             setSendToView("랜덤")
             setSendTo(null)
         } else {
-            setSendToView(localStorage.getItem("opponent_nickname"))
-            setSendTo(localStorage.getItem("opponent_userId"))
+            // [!!] 수정: localStorage.getItem 결과가 null일 경우 빈 문자열로 대체합니다.
+            const opponentNickname = localStorage.getItem("opponent_nickname")
+            const opponentUserId = localStorage.getItem("opponent_userId")
+
+            // [!!] Type 오류 해결: null일 경우 "상대방"이라는 string 값으로 대체
+            setSendToView(opponentNickname || "상대방") 
+            setSendTo(opponentUserId) // setSendTo는 string | null 타입을 받으므로 그대로 유지
         }
-    }, []);
+    }, [targetType]); // targetType이 변경될 때마다 실행되도록 의존성 추가
 
     const sendPenpalHandler = async () => {
         if (penpalContent.length < 5) {
@@ -74,14 +82,20 @@ export default function PenpalWritePage() {
         setIsSending(true); // 전송 시작
 
         try {
-            const sendBody: { sendTo: String | null; content: string } = {
+            const token = accessToken;
+            if (!token) {
+                router.push('/login');
+                return;
+            }
+
+            const sendBody: { sendTo: string | null; content: string } = {
                 sendTo: sendTo,
                 content: penpalContent
             };
 
             const data = await sendPenpalFetcher(
                 '/api/penpal/send',
-                accessToken!!,
+                token, 
                 sendBody
             );
 
@@ -104,8 +118,8 @@ export default function PenpalWritePage() {
                 <button className="text-black">취소</button>
                 <div className="flex items-center gap-4">
                     {/*<button className=" text-black">임시저장</button>*/}
-                    <button className="rounded-md px-3 py-1 text-black" onClick={sendPenpalHandler}>
-                        전송하기
+                    <button className="rounded-md px-3 py-1 text-black" onClick={sendPenpalHandler} disabled={isSending}>
+                        {isSending ? "전송 중..." : "전송하기"}
                     </button>
                 </div>
             </header>
@@ -126,6 +140,7 @@ export default function PenpalWritePage() {
                     className="h-[600px] rounded-lg border-2 border-[#CCA57A] bg-transparent p-3 outline-none resize-none"
                     value={penpalContent}
                     onChange={(e) => setPenpalContent(e.target.value)}
+                    disabled={isSending}
                 />
             </main>
         </div>
